@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AddStockDialog</class>
+ <widget class="QDialog" name="AddStockDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>650</height>
+   </rect>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QDialog { background-color: transparent; }
+    QFrame#dialog_content {
+        background-color: white;
+        border-radius: 15px;
+        border: 1px solid #E2E8F0;
+    }
+    QLabel {
+        font-family: &quot;Segoe UI&quot;;
+        color: #334155;
+        font-weight: bold;
+        font-size: 13px;
+    }
+    QLineEdit, QDateEdit {
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 14px;
+        color: #0F172A;
+    }
+    QLineEdit:focus, QDateEdit:focus {
+        border: 2px solid #06B6D4;
+        background-color: white;
+    }
+   </string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>10</number>
+   </property>
+   <property name="topMargin">
+    <number>10</number>
+   </property>
+   <property name="rightMargin">
+    <number>10</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
+   <item>
+    <widget class="QFrame" name="dialog_content">
+     <layout class="QVBoxLayout" name="layout_content">
+      <property name="spacing">
+       <number>15</number>
+      </property>
+      <property name="leftMargin">
+       <number>30</number>
+      </property>
+      <property name="topMargin">
+       <number>30</number>
+      </property>
+      <property name="rightMargin">
+       <number>30</number>
+      </property>
+      <property name="bottomMargin">
+       <number>30</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label_header">
+        <property name="styleSheet">
+         <string>font-size: 22px; font-weight: 800; color: #0F172A; margin-bottom: 5px;</string>
+        </property>
+        <property name="text">
+         <string>Add New Product</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_code">
+        <property name="text">
+         <string>Product Code (Auto-generated if empty)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="txt_barcode">
+        <property name="placeholderText">
+         <string>e.g. P-1001 or Scan Barcode</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_name">
+        <property name="text">
+         <string>Product Name</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="txt_name">
+        <property name="placeholderText">
+         <string>e.g. Silver Swan Soy Sauce</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_cat">
+        <property name="text">
+         <string>Category</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="txt_category">
+        <property name="placeholderText">
+         <string>e.g. Condiments, Canned, Frozen</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="layout_prices">
+        <property name="spacing">
+         <number>15</number>
+        </property>
+        <item>
+         <layout class="QVBoxLayout" name="vbox_cost">
+          <item>
+           <widget class="QLabel" name="lbl_cost">
+            <property name="text">
+             <string>Cost Price (₱)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="txt_cost">
+            <property name="placeholderText">
+             <string>0.00</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="vbox_price">
+          <item>
+           <widget class="QLabel" name="lbl_price">
+            <property name="text">
+             <string>Selling Price (₱)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="txt_price">
+            <property name="placeholderText">
+             <string>0.00</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="layout_stock">
+        <property name="spacing">
+         <number>15</number>
+        </property>
+        <item>
+         <layout class="QVBoxLayout" name="vbox_stock">
+          <item>
+           <widget class="QLabel" name="lbl_stock">
+            <property name="text">
+             <string>Initial Stock</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="txt_stock">
+            <property name="placeholderText">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="vbox_expiry">
+          <item>
+           <widget class="QLabel" name="lbl_exp">
+            <property name="text">
+             <string>Expiry Date</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDateEdit" name="date_expiry">
+            <property name="displayFormat">
+             <string>yyyy-MM-dd</string>
+            </property>
+            <property name="calendarPopup">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="layout_buttons">
+        <item>
+         <widget class="QPushButton" name="btn_cancel">
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+          <property name="styleSheet">
+           <string>QPushButton { background-color: #F1F5F9; color: #475569; border: none; padding: 12px; border-radius: 8px; font-weight: bold; } QPushButton:hover { background-color: #E2E8F0; }</string>
+          </property>
+          <property name="text">
+           <string>Cancel</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btn_save">
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+          <property name="styleSheet">
+           <string>QPushButton { background-color: #0891B2; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; } QPushButton:hover { background-color: #06B6D4; }</string>
+          </property>
+          <property name="text">
+           <string>Save Product</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PerishableItem</class>
+ <widget class="QWidget" name="PerishableItem">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>900</width>
+    <height>60</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>60</height>
+   </size>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QWidget#PerishableItem { background-color: transparent; }
+    QLabel { font-family: &quot;Segoe UI&quot;; }
+   </string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QFrame" name="container">
+     <property name="styleSheet">
+      <string notr="true">
+        QFrame#container {
+            background-color: white;
+            border-bottom: 1px solid #F1F5F9;
+            border-radius: 0px;
+        }
+        QFrame#container:hover {
+            background-color: #F8FAFC;
+        }
+      </string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Shape::StyledPanel</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <property name="leftMargin">
+       <number>30</number>
+      </property>
+      <property name="topMargin">
+       <number>10</number>
+      </property>
+      <property name="rightMargin">
+       <number>30</number>
+      </property>
+      <property name="bottomMargin">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="lbl_name">
+        <property name="styleSheet">
+         <string>
+            color: #1E293B;
+            font-weight: bold;
+            font-size: 14px;
+            background: transparent;
+            border: none;
+         </string>
+        </property>
+        <property name="text">
+         <string>Product Name</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_stock">
+        <property name="styleSheet">
+         <string>
+            color: #475569;
+            font-size: 14px;
+            background: transparent;
+            border: none;
+         </string>
+        </property>
+        <property name="text">
+         <string>50 units</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+        <property name="fixedSize" stdset="0">
+         <size>
+          <width>150</width>
+          <height>26</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_expiry">
+        <property name="styleSheet">
+         <string>
+            color: #DC2626; /* Red-600 */
+            font-family: &quot;Consolas&quot;;
+            font-weight: bold;
+            font-size: 14px;
+            background: transparent;
+            border: none;
+         </string>
+        </property>
+        <property name="text">
+         <string>2023-12-25</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+        <property name="fixedSize" stdset="0">
+         <size>
+          <width>150</width>
+          <height>26</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_action">
+        <property name="styleSheet">
+         <string>
+           background-color: #EF4444; /* Red-500 */
+           color: white;
+           font-weight: bold;
+           font-size: 11px;
+           border-radius: 13px;
+           border: none;
+         </string>
+        </property>
+        <property name="text">
+         <string>Discount Now</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+        <property name="fixedSize" stdset="0">
+         <size>
+          <width>120</width>
+          <height>26</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

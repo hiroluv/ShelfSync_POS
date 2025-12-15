@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CashierWindow</class>
+ <widget class="QMainWindow" name="CashierWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1084</width>
+    <height>579</height>
+   </rect>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QMainWindow { background-color: #F8FAFC; }
+    font-family: &quot;Segoe UI&quot;;
+   </string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QWidget" name="left_panel" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QFrame" name="header_frame">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>80</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">
+            QFrame#header_frame {
+                background-color: white;
+                border-bottom: 1px solid #E2E8F0;
+            }
+          </string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <property name="leftMargin">
+           <number>24</number>
+          </property>
+          <property name="rightMargin">
+           <number>24</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lbl_logo">
+            <property name="styleSheet">
+             <string>font-size: 24px; font-weight: 800; color: #0F172A;</string>
+            </property>
+            <property name="text">
+             <string>ShelfSync POS</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="hspacer1">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="input_search">
+            <property name="minimumSize">
+             <size>
+              <width>400</width>
+              <height>45</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">
+              QLineEdit {
+                background-color: #F1F5F9;
+                border: 1px solid #E2E8F0;
+                border-radius: 22px;
+                padding-left: 20px;
+                font-size: 14px;
+                color: #0F172A;
+              }
+              QLineEdit:focus {
+                border: 2px solid #06B6D4;
+                background-color: white;
+              }
+             </string>
+            </property>
+            <property name="placeholderText">
+             <string>Scan item or search product...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="hspacer2">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_logout">
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">
+              QPushButton {
+                background-color: transparent;
+                color: #64748B;
+                font-weight: 600;
+                border-radius: 8px;
+                padding: 8px 16px;
+              }
+              QPushButton:hover {
+                background-color: #FEF2F2;
+                color: #DC2626;
+              }
+             </string>
+            </property>
+            <property name="text">
+             <string>Exit</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QScrollArea" name="scrollArea_products">
+         <property name="styleSheet">
+          <string notr="true">
+            QScrollArea { background-color: #F8FAFC; border: none; }
+            QWidget#scrollContents { background-color: #F8FAFC; }
+            QScrollBar:vertical {
+                border: none; background: #F1F5F9; width: 10px; margin: 0px; border-radius: 5px;
+            }
+            QScrollBar::handle:vertical {
+                background: #CBD5E1; min-height: 20px; border-radius: 5px;
+            }
+            QScrollBar::handle:vertical:hover { background: #94A3B8; }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }
+          </string>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Shape::NoFrame</enum>
+         </property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollContents">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>684</width>
+            <height>499</height>
+           </rect>
+          </property>
+          <layout class="QGridLayout" name="grid_products">
+           <property name="leftMargin">
+            <number>24</number>
+           </property>
+           <property name="topMargin">
+            <number>24</number>
+           </property>
+           <property name="rightMargin">
+            <number>24</number>
+           </property>
+           <property name="bottomMargin">
+            <number>24</number>
+           </property>
+           <property name="spacing">
+            <number>16</number>
+           </property>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QFrame" name="frame_cart">
+      <property name="minimumSize">
+       <size>
+        <width>400</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>400</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">
+        QFrame#frame_cart {
+            background-color: white;
+            border-left: 1px solid #E2E8F0;
+        }
+       </string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QFrame" name="cart_header">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>70</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">
+            background-color: #F8FAFC;
+            border-bottom: 1px solid #E2E8F0;
+          </string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="rightMargin">
+           <number>20</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lbl_cart_title">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>62</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 18px; font-weight: 800; color: #1E293B; background: none;</string>
+            </property>
+            <property name="text">
+             <string>Current Order</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="hspacer3">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="lbl_cart_count">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">
+                background-color: #E2E8F0; color: #475569;
+                font-weight: 700; border-radius: 14px; padding: 4px 12px; font-size: 12px;
+             </string>
+            </property>
+            <property name="text">
+             <string>0 Items</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QScrollArea" name="scrollArea_cart">
+         <property name="styleSheet">
+          <string notr="true">
+            QScrollArea { background-color: white; border: none; }
+            QWidget#scrollContents_cart { background-color: white; }
+            QScrollBar:vertical {
+                border: none; background: #F8FAFC; width: 8px; margin: 0px; border-radius: 4px;
+            }
+            QScrollBar::handle:vertical {
+                background: #CBD5E1; min-height: 20px; border-radius: 4px;
+            }
+            QScrollBar::handle:vertical:hover { background: #94A3B8; }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }
+          </string>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Shape::NoFrame</enum>
+         </property>
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollContents_cart">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>400</width>
+            <height>250</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="layout_cart_items">
+           <property name="spacing">
+            <number>12</number>
+           </property>
+           <property name="leftMargin">
+            <number>20</number>
+           </property>
+           <property name="topMargin">
+            <number>20</number>
+           </property>
+           <property name="rightMargin">
+            <number>20</number>
+           </property>
+           <property name="bottomMargin">
+            <number>20</number>
+           </property>
+           <item>
+            <spacer name="vspacer_cart">
+             <property name="orientation">
+              <enum>Qt::Orientation::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="cart_footer">
+         <property name="styleSheet">
+          <string notr="true">
+            border-top: 1px solid #E2E8F0; background-color: white;
+          </string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <property name="spacing">
+           <number>8</number>
+          </property>
+          <property name="leftMargin">
+           <number>24</number>
+          </property>
+          <property name="topMargin">
+           <number>20</number>
+          </property>
+          <property name="rightMargin">
+           <number>24</number>
+          </property>
+          <property name="bottomMargin">
+           <number>24</number>
+          </property>
+          <item>
+           <layout class="QHBoxLayout" name="hbox_sub">
+            <item>
+             <widget class="QLabel" name="l1">
+              <property name="styleSheet">
+               <string>color: #64748B; font-weight: 500;</string>
+              </property>
+              <property name="text">
+               <string>Subtotal</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lbl_val_subtotal">
+              <property name="styleSheet">
+               <string>color: #64748B; font-weight: 600;</string>
+              </property>
+              <property name="text">
+               <string>₱0.00</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignRight</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="hbox_vat">
+            <item>
+             <widget class="QLabel" name="l2">
+              <property name="styleSheet">
+               <string>color: #64748B; font-weight: 500;</string>
+              </property>
+              <property name="text">
+               <string>VAT (12%)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lbl_val_vat">
+              <property name="styleSheet">
+               <string>color: #64748B; font-weight: 600;</string>
+              </property>
+              <property name="text">
+               <string>₱0.00</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignRight</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="s_total">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>5</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="hbox_total">
+            <item>
+             <widget class="QLabel" name="l3">
+              <property name="styleSheet">
+               <string>color: #0F172A; font-weight: 800; font-size: 20px;</string>
+              </property>
+              <property name="text">
+               <string>Total</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lbl_val_total">
+              <property name="styleSheet">
+               <string>color: #0F172A; font-weight: 900; font-size: 20px;</string>
+              </property>
+              <property name="text">
+               <string>₱0.00</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignRight</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <spacer name="s_btn">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>15</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_checkout">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>50</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">
+              QPushButton {
+                background-color: #0891B2; color: white;
+                border-radius: 12px; font-weight: 800; font-size: 15px;
+              }
+              QPushButton:hover { background-color: #0E7490; }
+              QPushButton:disabled { background-color: #E2E8F0; color: #94A3B8; }
+             </string>
+            </property>
+            <property name="text">
+             <string>Process Payment</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

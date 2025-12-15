@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>UserItem</class>
+ <widget class="QWidget" name="UserItem">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>80</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>80</height>
+   </size>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QWidget#UserItem { background-color: transparent; }
+    QLabel { font-family: "Segoe UI"; }
+   </string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin"><number>0</number></property>
+   <property name="rightMargin"><number>0</number></property>
+   <property name="topMargin"><number>0</number></property>
+   <property name="bottomMargin"><number>0</number></property>
+
+   <item>
+    <widget class="QFrame" name="container">
+     <property name="styleSheet">
+      <string notr="true">
+        QFrame#container {
+            background-color: white;
+            border-bottom: 1px solid #F1F5F9;
+            border-radius: 0px;
+        }
+        QFrame#container:hover {
+            background-color: #F8FAFC;
+        }
+      </string>
+     </property>
+     <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
+
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="leftMargin"><number>30</number></property>
+      <property name="rightMargin"><number>30</number></property>
+      <property name="topMargin"><number>15</number></property>
+      <property name="bottomMargin"><number>15</number></property>
+      <property name="spacing"><number>20</number></property>
+
+      <item>
+       <widget class="QLabel" name="lbl_avatar">
+        <property name="text"><string>A</string></property>
+        <property name="alignment"><set>Qt::AlignCenter</set></property>
+        <property name="fixedSize"><size><width>48</width><height>48</height></size></property>
+        <property name="styleSheet">
+         <string>
+            background-color: #E2E8F0;
+            color: #475569;
+            border-radius: 24px;
+            font-weight: bold;
+            font-size: 18px;
+         </string>
+        </property>
+       </widget>
+      </item>
+
+      <item>
+       <layout class="QVBoxLayout" name="vbox_info">
+        <property name="spacing"><number>2</number></property>
+        <item>
+         <widget class="QLabel" name="lbl_name">
+          <property name="text"><string>User Name</string></property>
+          <property name="styleSheet"><string>color: #0F172A; font-weight: bold; font-size: 16px; background: transparent;</string></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="lbl_role">
+          <property name="text"><string>Role</string></property>
+          <property name="styleSheet"><string>color: #64748B; font-weight: 500; font-size: 13px; background: transparent;</string></property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+
+      <item><spacer name="spacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeType"><enum>QSizePolicy::Expanding</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+
+      <item>
+       <widget class="QPushButton" name="btn_remove">
+        <property name="text"><string>Remove</string></property>
+        <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
+        <property name="styleSheet">
+         <string notr="true">
+           QPushButton {
+             color: #94A3B8;
+             background-color: transparent;
+             border: none;
+             font-weight: 600;
+             padding: 8px 16px;
+             border-radius: 8px;
+             text-align: left;
+           }
+           QPushButton:hover {
+             color: #DC2626;
+             background-color: #FEF2F2;
+           }
+         </string>
+        </property>
+       </widget>
+      </item>
+
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

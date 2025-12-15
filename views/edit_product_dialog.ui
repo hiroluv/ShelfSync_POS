@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>EditProductDialog</class>
+ <widget class="QDialog" name="EditProductDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>748</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Edit Product &amp; Adjust Stock</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QDialog { background-color: #F1F5F9; }
+    QFrame#dialog_content {
+        background-color: white;
+        border-radius: 15px;
+  
+    }
+    QLabel { font-family: &quot;Segoe UI&quot;; color: #334155; font-weight: bold; font-size: 13px; }
+    QLineEdit, QDoubleSpinBox, QSpinBox, QPlainTextEdit {
+        background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; font-size: 14px; color: #0F172A;
+    }
+    QLineEdit:focus, QPlainTextEdit:focus { border: 2px solid #06B6D4; background-color: white; }
+    QGroupBox { font-weight: bold; color: #0F172A; border: 1px solid #E2E8F0; border-radius: 8px; margin-top: 20px; }
+    QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top center; padding: 0 10px; background-color: white; }
+   </string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QFrame" name="dialog_content">
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>15</number>
+      </property>
+      <property name="leftMargin">
+       <number>30</number>
+      </property>
+      <property name="topMargin">
+       <number>30</number>
+      </property>
+      <property name="rightMargin">
+       <number>30</number>
+      </property>
+      <property name="bottomMargin">
+       <number>30</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="lbl_title">
+        <property name="styleSheet">
+         <string>font-size: 20px; font-weight: 800; color: #0F172A;</string>
+        </property>
+        <property name="text">
+         <string>Edit Product Details</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QFormLayout" name="formLayout">
+        <property name="verticalSpacing">
+         <number>15</number>
+        </property>
+        <item row="0" column="0">
+         <widget class="QLabel" name="l1">
+          <property name="text">
+           <string>Product Name</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="input_name"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="l2">
+          <property name="text">
+           <string>Category</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="input_category"/>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="l3">
+          <property name="text">
+           <string>Selling Price (₱)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QDoubleSpinBox" name="input_price">
+          <property name="maximum">
+           <double>999999.989999999990687</double>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="l4">
+          <property name="text">
+           <string>Cost Price (₱)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QDoubleSpinBox" name="input_cost">
+          <property name="maximum">
+           <double>999999.989999999990687</double>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="group_stock">
+        <property name="title">
+         <string>Stock Adjustment (Shrinkage Only)</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_stock">
+         <item>
+          <layout class="QHBoxLayout" name="hbox_stock_display">
+           <item>
+            <widget class="QLabel" name="lbl_current_stock_title">
+             <property name="text">
+              <string>Current Stock:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="lbl_current_stock_val">
+             <property name="styleSheet">
+              <string>font-size: 16px; color: #0891B2;</string>
+             </property>
+             <property name="text">
+              <string>0</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="hs">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="Line" name="line_stock">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QFormLayout" name="form_shrink">
+           <item row="0" column="0">
+            <widget class="QLabel" name="l_rem">
+             <property name="text">
+              <string>Remove Quantity:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSpinBox" name="input_remove_qty">
+             <property name="styleSheet">
+              <string>color: #EF4444; font-weight: bold;</string>
+             </property>
+             <property name="maximum">
+              <number>99999</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QLabel" name="l_reason">
+           <property name="text">
+            <string>Reason for Removal (Required):</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPlainTextEdit" name="input_reason">
+           <property name="styleSheet">
+            <string notr="true">border-radius: 12px;</string>
+           </property>
+           <property name="placeholderText">
+            <string>e.g., Expired, Damaged, Theft...</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="layout_buttons">
+        <item>
+         <widget class="QLabel" name="lbl_date">
+          <property name="styleSheet">
+           <string>color: #94A3B8; font-weight: normal;</string>
+          </property>
+          <property name="text">
+           <string>Date: 2023-10-27</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="hs2">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btn_cancel">
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+          <property name="styleSheet">
+           <string>QPushButton { background-color: #F1F5F9; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; } QPushButton:hover { background-color: #E2E8F0; }</string>
+          </property>
+          <property name="text">
+           <string>Cancel</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btn_save">
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+          <property name="styleSheet">
+           <string>QPushButton { background-color: #0891B2; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; } QPushButton:hover { background-color: #06B6D4; }</string>
+          </property>
+          <property name="text">
+           <string>Save Changes</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

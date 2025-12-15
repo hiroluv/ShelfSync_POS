@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AuditWindow</class>
+ <widget class="QDialog" name="AuditWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>900</width>
+    <height>650</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Activity Log</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+    QDialog {
+        background-color: transparent;
+    }
+   </string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_root">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>10</number>
+   </property>
+   <property name="topMargin">
+    <number>10</number>
+   </property>
+   <property name="rightMargin">
+    <number>10</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
+   <item>
+    <widget class="QFrame" name="dialog_content">
+     <property name="styleSheet">
+      <string notr="true">
+       QFrame#dialog_content{
+                background-color: white;
+                border-radius: 16px;
+                border: 1px solid #E2E8F0;
+            }
+
+       /* --- MODERN SCROLLBAR STYLING --- */
+       QScrollBar:vertical {
+            border: none;
+            background: #F1F5F9; /* Very subtle track background */
+            width: 8px;
+            margin: 0px 0px 0px 0px;
+            border-radius: 4px;
+       }
+       QScrollBar::handle:vertical {
+            background: #CBD5E1; /* Normal State: Light Gray */
+            min-height: 30px;
+            border-radius: 4px;
+       }
+       QScrollBar::handle:vertical:hover {
+            background: #94A3B8; /* Hover State: Darker Gray */
+       }
+       QScrollBar::handle:vertical:pressed {
+            background: #64748B; /* Pressed State: Even Darker */
+       }
+       QScrollBar::sub-line:vertical, QScrollBar::add-line:vertical {
+            border: none;
+            background: none;
+            height: 0px;
+       }
+       QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical, QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+            background: none;
+       }
+      </string>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::Shape::NoFrame</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Shadow::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_content">
+      <property name="spacing">
+       <number>20</number>
+      </property>
+      <property name="leftMargin">
+       <number>30</number>
+      </property>
+      <property name="topMargin">
+       <number>30</number>
+      </property>
+      <property name="rightMargin">
+       <number>30</number>
+      </property>
+      <property name="bottomMargin">
+       <number>30</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" name="header_layout">
+        <item>
+         <widget class="QLabel" name="label_title">
+          <property name="styleSheet">
+           <string>font-size: 24px; font-weight: 800; color: #0F172A; font-family: &quot;Segoe UI&quot;; border: none;</string>
+          </property>
+          <property name="text">
+           <string>Audit &amp; Activity Log</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btn_close">
+          <property name="minimumSize">
+           <size>
+            <width>60</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
+          <property name="styleSheet">
+           <string>
+               QPushButton { border: none; background-color: #E2E8F0; border-radius: 6px; color: #475569; font-weight: bold; padding: 5px 15px;}
+               QPushButton:hover { background-color: #CBD5E1; color: #1E293B; }
+           </string>
+          </property>
+          <property name="text">
+           <string>Close</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QScrollArea" name="scrollArea">
+        <property name="styleSheet">
+         <string notr="true">QScrollArea { border: none; background-color: transparent; }</string>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="scrollContents">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>818</width>
+           <height>514</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string>background-color: transparent;</string>
+         </property>
+         <layout class="QVBoxLayout" name="layout_audit_list">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

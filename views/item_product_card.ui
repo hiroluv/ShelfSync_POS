@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ProductCard</class>
+ <widget class="QWidget" name="ProductCard">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>145</width>
+    <height>145</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>145</width>
+    <height>145</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>145</width>
+    <height>145</height>
+   </size>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QPushButton" name="btn_card">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>150</height>
+      </size>
+     </property>
+     <property name="cursor">
+      <cursorShape>PointingHandCursor</cursorShape>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">
+        QPushButton {
+            background-color: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            text-align: left;
+            padding: 10px;
+        }
+        QPushButton:hover {
+            border: 1px solid #22D3EE;
+            background-color: #F8FAFC;
+        }
+        QPushButton:pressed {
+            background-color: #F1F5F9;
+            border: 1px solid #06B6D4;
+        }
+      </string>
+     </property>
+     <layout class="QVBoxLayout" name="vbox_internal">
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="lbl_name">
+        <property name="styleSheet">
+         <string notr="true">font-size: 13px; font-weight: 650; color: #1E293B; border: none; background: transparent;</string>
+        </property>
+        <property name="text">
+         <string>Product Name</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_category">
+        <property name="styleSheet">
+         <string>font-size: 9px; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.5px; border: none; background: transparent;</string>
+        </property>
+        <property name="text">
+         <string>CATEGORY</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="vspacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="vbox_bot">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="lbl_price">
+          <property name="styleSheet">
+           <string notr="true">font-size: 14.5px; font-weight: 700; color: #0F172A; border: none; background: transparent;</string>
+          </property>
+          <property name="text">
+           <string>₱0.00</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="lbl_stock">
+          <property name="styleSheet">
+           <string notr="true">
+            background-color: #ECFEFF; color: #0E7490;
+            padding: 2px; border-radius: 4px; font-weight: 700; font-size: 10px; border: none;
+           </string>
+          </property>
+          <property name="text">
+           <string>12 left</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
