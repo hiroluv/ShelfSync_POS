@@ -69,8 +69,8 @@ class DatabaseManager:
     def add_user(self, name, pwd, role):
         return self.manager_db.add_user(name, pwd, role)
 
-    def delete_user(self, uid):
-        return self.manager_db.delete_user(uid)
+    def delete_user(self, user_id):
+        return self.manager_db.delete_user(user_id)
 
     def get_inventory_items(self):
         return self.manager_db.get_inventory_items()

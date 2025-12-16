@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt, QPoint
 from PyQt6 import uic
 import os
 
-# Import UI Helper for shadow
+#sa shadow
 from utils.ui_helper import add_drop_shadow
 
 
@@ -14,21 +14,12 @@ class EditProductDialogController(QDialog):
         self.main_controller = parent
         self.product = product_data
         self.db = parent.db
+        self.old_pos = None        #dragging
 
-        # Variable for dragging
-        self.old_pos = None
-
-        # ========================================================
-        #  FRAMELESS WINDOW SETUP
-        # ========================================================
-        # Frameless + Window Stays on Top (optional, remove StaysOnTop if it's annoying)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)  #  FRAMELESS WINDOW SETUP and always on top
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        # ========================================================
-        #  USER IDENTITY LOGIC
-        # ========================================================
-        self.user_name = "System Admin"
+        self.user_name = "System Admin"  #  USER IDENTITY LOGIC
 
         if hasattr(self.main_controller, 'user') and self.main_controller.user:
             user_obj = self.main_controller.user
@@ -53,7 +44,6 @@ class EditProductDialogController(QDialog):
             uic.loadUi(ui_path, self)
 
             # Apply Shadow to the main content frame
-            # Ensure your UI has a QFrame named 'dialog_content' wrapping the inputs
             dialog_content = self.findChild(QFrame, 'dialog_content')
             if dialog_content:
                 add_drop_shadow(dialog_content)

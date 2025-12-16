@@ -1,5 +1,5 @@
 === PROJECT STRUCTURE ===
-IT5_POS/
+ShelfSync_POS/
     export_project.py
     main.py
     project_code_dump.txt
@@ -313,30 +313,21 @@ from PyQt6.QtWidgets import QDialog, QVBoxLayout, QFrame
 from PyQt6.QtCore import Qt, QPoint
 import os
 
-# Import UI Helpers
 from utils.ui_helper import set_icon, add_drop_shadow, Overlay
 
 
 class AuditWindowController(QDialog):
     def __init__(self, main_controller):
-        # 1. Parent MUST be main_controller
         super().__init__(parent=main_controller)
         self.main_controller = main_controller
         self.db = main_controller.db
-
-        # Variable for dragging
+        #drag
         self.old_pos = None
 
-        # ========================================================
-        #  1. SETUP DIMMER OVERLAY
-        #  We attach it to main_controller so it dims the App background.
-        # ========================================================
+
         self.overlay = Overlay(self.main_controller)
         self.overlay.hide()
 
-        # ========================================================
-        #  2. FRAMELESS & TRANSPARENT SETUP (Matches Edit Product)
-        # ========================================================
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
@@ -347,14 +338,12 @@ class AuditWindowController(QDialog):
         try:
             uic.loadUi(ui_path, self)
 
-            # Apply Shadow to the internal frame named 'dialog_content'
-            # This ensures the white box pops out, while the rest is transparent
+            # shadows
             content = self.findChild(QFrame, 'dialog_content')
             if content:
                 add_drop_shadow(content)
             else:
-                # Fallback: if 'dialog_content' isn't found, try the first frame
-                # (You should ensure your .ui file has a main QFrame wrapping everything)
+                # try first frame
                 frames = self.findChildren(QFrame)
                 if frames: add_drop_shadow(frames[0])
 
@@ -365,18 +354,15 @@ class AuditWindowController(QDialog):
         self.setup_ui()
         self.load_data()
 
-    # ========================================================
-    #  3. CRITICAL: HANDLING OVERLAY Z-ORDER
-    # ========================================================
     def showEvent(self, event):
-        """When dialog opens, show the dim overlay on the main window."""
+        """When dialog opens, meron blurry effect"""
         if self.overlay:
             # 1. Resize overlay to cover the Main Window
             self.overlay.resize(self.main_controller.size())
             # 2. Show the overlay
             self.overlay.show()
 
-        # 3. CRITICAL: Raise THIS Dialog to the top so it sits ABOVE the overlay
+
         self.raise_()
         self.activateWindow()
 
@@ -388,9 +374,6 @@ class AuditWindowController(QDialog):
             self.overlay.hide()
         super().closeEvent(event)
 
-    # ========================================================
-    #  STANDARD LOGIC
-    # ========================================================
     def setup_ui(self):
         if hasattr(self, 'btn_close'):
             self.btn_close.clicked.connect(self.close)
@@ -682,13 +665,13 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6 import uic
 import os
 
-# Import components
+
 from controllers.product_grid_controller import ProductGrid_Controller
 from controllers.cart_controller import Cart_Controller
 
 
 class CashierController(QMainWindow):
-    # Signal to tell Main.py to switch back to Login
+
     logout_request = pyqtSignal()
 
     def __init__(self, user, main_app):
@@ -703,10 +686,8 @@ class CashierController(QMainWindow):
         try:
             uic.loadUi(ui_path, self)
         except Exception as e:
-            print(f"CRITICAL ERROR: Could not load UI file at {ui_path}\nError: {e}")
+            print(f"dili ma load ang UI file sa {ui_path}\nbro: {e}")
             return
-
-        # 2. INITIALIZE SUB-CONTROLLERS
 
         # --- Product Grid ---
         if hasattr(self, 'grid_products'):
@@ -718,20 +699,17 @@ class CashierController(QMainWindow):
         # --- Cart Controller ---
         if hasattr(self, 'scrollArea_cart'):
             self.cart_controller = Cart_Controller(self, self.scrollArea_cart, self.db)
-        else:
-            print("Error: 'scrollArea_cart' widget not found in UI")
 
-        # 3. SETUP VISUALS
+        # VISUALS
         self.setup_ui()
-
-        # 4. SETUP CONNECTIONS
+        # CONNECTIONS
         self.setup_connections()
 
     def setup_ui(self):
-        """Sets up static UI elements like Icons."""
+        """Sets up ang svg icons"""
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        # --- Search Icon ---
+        #Search Icon
         if hasattr(self, 'input_search'):
             search_icon_path = os.path.join(base_path, 'assets', 'icons', 'search.svg')
             if os.path.exists(search_icon_path):
@@ -739,7 +717,7 @@ class CashierController(QMainWindow):
                 search_action.setIcon(QIcon(search_icon_path))
                 self.input_search.addAction(search_action, QLineEdit.ActionPosition.LeadingPosition)
 
-        # --- Cart Icon ---
+        #Cart Icon
         if hasattr(self, 'lbl_cart_title'):
             cart_icon_path = os.path.join(base_path, 'assets', 'icons', 'cart.svg')
             cart_icon_path = cart_icon_path.replace('\\', '/')
@@ -751,9 +729,9 @@ class CashierController(QMainWindow):
                 )
 
     def setup_connections(self):
-        """Connects signals and slots."""
+        """Connects slots."""
 
-        # 1. Product Grid -> Add to Cart
+        #Product Grid -> Add to Cart
         if hasattr(self, 'grid_controller') and hasattr(self, 'cart_controller'):
             if hasattr(self.grid_controller, 'product_clicked'):
                 self.grid_controller.product_clicked.connect(self.handle_add_product)
@@ -767,15 +745,15 @@ class CashierController(QMainWindow):
         if hasattr(self, 'btn_checkout'):
             self.btn_checkout.clicked.connect(self.handle_checkout)
 
-        # 3. Exit / Logout Button
+        # 3. Exit Button
         if hasattr(self, 'btn_logout'):
-            # Connect to handle_logout instead of close() directly
+            # Connect to handle_logout instead na close() directly
             self.btn_logout.clicked.connect(self.handle_logout)
             print("DEBUG: Exit button connected successfully.")
         else:
             print("WARNING: 'btn_exit' not found in UI. Please check the button name in Qt Designer.")
 
-    # --- ACTION HANDLERS ---
+    # --- ACTIONs cutieeee---
 
     def handle_logout(self):
         """Handles the exit button click."""
@@ -795,7 +773,7 @@ class CashierController(QMainWindow):
             if success:
                 self.grid_controller.refresh_products()
 
-    # --- RESPONSIVE LOGIC ---
+    # --- RESPONS LOGIC ---
     def resizeEvent(self, event):
         width = self.width()
         new_cols = 4
@@ -868,34 +846,48 @@ class DashboardController(QtCore.QObject):
     def populate_sales_list(self):
         layout = self.main_controller.layout_sales_list
 
-        while layout.count() > 1:
+        # 1. Clear existing items
+        while layout.count() > 0:
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
 
+        # 2. Fetch Data
         sales = self.db.get_recent_sales()
 
+        # 3. Load UI
         ui_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             'views', 'item_sale.ui'
         )
 
         if not os.path.exists(ui_path):
-            print(f"Error: item_sale.ui not found at {ui_path}")
             return
 
         for sale in sales:
             try:
                 widget = uic.loadUi(ui_path)
 
-                if hasattr(widget, 'lbl_product_name'):
-                    widget.lbl_product_name.setText(sale.get('product_name', 'Unknown Item'))
-                if hasattr(widget, 'lbl_price'):
-                    widget.lbl_price.setText(f"₱{float(sale.get('price', 0)):.2f}")
-                if hasattr(widget, 'lbl_quantity'):
-                    widget.lbl_quantity.setText(f"Qty: {sale.get('quantity', 0)}")
-                if hasattr(widget, 'lbl_cashier_name'):
-                    widget.lbl_cashier_name.setText(f"Cashier: {sale.get('cashier_name', 'N/A')}")
+                # --- FIX: USE EXACT DATABASE COLUMN NAMES ---
+
+                # QUANTITY (Column: items_count)
+                # We disregard product name as requested, just showing item count
+                if hasattr(widget, 'lbl_items'):
+                    count = sale.get('items_count', 0)
+                    widget.lbl_items.setText(f"{count} Items")
+
+                # TOTAL (Column: total_amount)
+                if hasattr(widget, 'lbl_total'):
+                    # The DB column is 'total_amount', NOT 'price'
+                    amount = float(sale.get('total_amount', 0))
+                    widget.lbl_total.setText(f"₱{amount:,.2f}")
+
+                # CASHIER NAME (Column: cashier_name)
+                if hasattr(widget, 'lbl_name'):
+                    cashier = sale.get('cashier_name', 'N/A')
+                    widget.lbl_name.setText(cashier)
+
+                # TIME (Column: sale_timestamp)
                 if hasattr(widget, 'lbl_time'):
                     time_val = sale.get('sale_timestamp')
                     if time_val:
@@ -915,7 +907,7 @@ from PyQt6.QtCore import Qt, QPoint
 from PyQt6 import uic
 import os
 
-# Import UI Helper for shadow
+#sa shadow
 from utils.ui_helper import add_drop_shadow
 
 
@@ -925,21 +917,12 @@ class EditProductDialogController(QDialog):
         self.main_controller = parent
         self.product = product_data
         self.db = parent.db
+        self.old_pos = None        #dragging
 
-        # Variable for dragging
-        self.old_pos = None
-
-        # ========================================================
-        #  FRAMELESS WINDOW SETUP
-        # ========================================================
-        # Frameless + Window Stays on Top (optional, remove StaysOnTop if it's annoying)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)  #  FRAMELESS WINDOW SETUP and always on top
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        # ========================================================
-        #  USER IDENTITY LOGIC
-        # ========================================================
-        self.user_name = "System Admin"
+        self.user_name = "System Admin"  #  USER IDENTITY LOGIC
 
         if hasattr(self.main_controller, 'user') and self.main_controller.user:
             user_obj = self.main_controller.user
@@ -964,7 +947,6 @@ class EditProductDialogController(QDialog):
             uic.loadUi(ui_path, self)
 
             # Apply Shadow to the main content frame
-            # Ensure your UI has a QFrame named 'dialog_content' wrapping the inputs
             dialog_content = self.findChild(QFrame, 'dialog_content')
             if dialog_content:
                 add_drop_shadow(dialog_content)
@@ -1189,7 +1171,7 @@ class InventoryController:
         # Sort (Newest First)
         filtered_products.sort(key=lambda x: x.id, reverse=True)
 
-        # === RENDER ROWS ===
+        # ROWS
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         row_ui_path = os.path.join(base_path, 'views', 'item_inventory.ui')
 
@@ -1200,13 +1182,7 @@ class InventoryController:
                 # Set Data
                 if hasattr(row_widget, 'lbl_name'): row_widget.lbl_name.setText(product.name)
                 if hasattr(row_widget, 'lbl_category'): row_widget.lbl_category.setText(product.category)
-
-                # --- FIX APPLIED HERE ---
-                # Changed 'lbl_stock_val' to 'lbl_stock' to match item_inventory.ui
-                if hasattr(row_widget, 'lbl_stock'):
-                    row_widget.lbl_stock.setText(str(product.stock))
-                # ------------------------
-
+                if hasattr(row_widget, 'lbl_stock'):row_widget.lbl_stock.setText(str(product.stock))
                 if hasattr(row_widget, 'lbl_price'): row_widget.lbl_price.setText(f"₱{product.selling_price:,.2f}")
 
                 # Status Badge
@@ -1224,13 +1200,10 @@ class InventoryController:
                         row_widget.lbl_status.setStyleSheet(
                             "background-color: #ECFDF5; color: #059669; border-radius: 12px; font-weight: bold;")
 
-                # Connect Edit Button
+                #Edit Button
                 if hasattr(row_widget, 'btn_edit'):
                     row_widget.btn_edit.clicked.connect(lambda _, p=product: self.open_edit_dialog(p))
-
-                # FIX 3: INSERT ABOVE SPACER
-                # Always insert at (count() - 1) to keep the spacer at the bottom
-                spacer_index = layout.count() - 1
+                spacer_index = layout.count() - 1   # Always insert at (count() - 1) to keep the spacer at the bottom
                 layout.insertWidget(spacer_index, row_widget)
 
             except Exception as e:
@@ -1259,7 +1232,7 @@ class InventoryController:
             overlay = Overlay(self.main_controller)
             overlay.show()
 
-            # FIX 4: SAFE USER CHECK
+            #USER CHECK
             if hasattr(self.main_controller, 'user') and self.main_controller.user:
                 current_user = self.main_controller.user.name
             else:
@@ -1621,7 +1594,7 @@ class MainController(QMainWindow):
             else:
                 self.set_btn_icon(btn, btn.path_normal)
 
-        # Refresh Data on Page Switch
+        # Refresh Data when mag switch page (no more re-running yay)
         if index == 0:
             self.dashboard_controller.refresh_data()
         elif index == 1:
@@ -1806,35 +1779,25 @@ class ProductGrid_Controller:
         for product in products:
             card = ProductCard(product)
 
-            # ==========================================================
-            #  1. DATA POPULATION & STYLE FIXES
-            # ==========================================================
+            #  1. SETUP & TRANSPARENCy
+            card.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+            card.setStyleSheet("background-color: transparent; border: none;")
 
-            # --- NAME LABEL ---
+            #  2. POPULATE DATA
+            # --- NAME ---
             lbl_name = card.findChild(QLabel, 'lbl_name')
             if lbl_name:
                 lbl_name.setText(str(product.name))
-                # Force Dark Text
-                lbl_name.setStyleSheet("""
-                    QLabel {
-                        color: #1E293B; 
-                        font-weight: 650; 
-                        font-size: 13px; 
-                        background: transparent;
-                        border: none;
-                    }
-                """)
                 lbl_name.setWordWrap(True)
 
-            # --- PRICE LABEL ---
+            # --- PRICE ---
             lbl_price = card.findChild(QLabel, 'lbl_price')
             if lbl_price:
                 lbl_price.setText(f"₱{product.selling_price:,.2f}")
-                lbl_price.setStyleSheet(
-                    "color: #0F172A; font-weight: 700; font-size: 14.5px; background: transparent; border: none;")
 
             # --- IMAGE ---
             lbl_image = card.findChild(QLabel, 'lbl_image')
+            # Fallback
             if not lbl_image and hasattr(card, 'lbl_image'):
                 lbl_image = card.lbl_image
 
@@ -1850,78 +1813,42 @@ class ProductGrid_Controller:
                     lbl_image.setText("No Image")
                     lbl_image.setStyleSheet("color: #94A3B8; font-size: 10px;")
 
-            # Connect Click
+            #Click
             card.add_to_cart_clicked.connect(self.parent.handle_add_product)
 
-            # ==========================================================
-            #  2. STOCK STATUS (Strict White Background)
-            # ==========================================================
 
-            target_widget = card.findChild(QPushButton, 'btn_card')
-            if not target_widget:
-                target_widget = card
+            #  3. STOCK STATUS
+            # Find button only, para dili ma highlight ang card
+            btn_card = card.findChild(QPushButton, 'btn_card')
+            if btn_card:
+                btn_card.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
             lbl_stock = card.findChild(QLabel, 'lbl_stock')
             threshold = getattr(product, 'threshold', 10)
 
-            # Common settings for all buttons to ensure consistency
-            # We insert the specific BORDER color into the f-string below
-            style_template = """
-                QPushButton {{
-                    background-color: white;
-                    text-align: left;
-                    padding: 10px;
-                    border-radius: 12px;
-                    border: {border};
-                }}
-                QPushButton:hover {{
-                    background-color: #F8FAFC; 
-                    border: {border_hover};
-                }}
-                QPushButton:pressed {{
-                    background-color: #F1F5F9;
-                    border: {border_hover};
-                }}
-            """
-
             if product.stock == 0:
-                # --- OUT OF STOCK ---
+                # === OUT OF STOCK ===
                 if lbl_stock:
                     lbl_stock.setText("Out of Stock")
+                    # Style ONLY the label
                     lbl_stock.setStyleSheet(
                         "background-color: #FEE2E2; color: #DC2626; border-radius: 4px; font-weight: 700; font-size: 10px; padding: 2px; border: none;")
 
-                # RED BORDER, WHITE BG (Standard Gray Hover)
-                target_widget.setStyleSheet(style_template.format(
-                    border="2px solid #DC2626",
-                    border_hover="2px solid #DC2626"
-                ))
-
             elif product.stock <= threshold:
-                # --- LOW STOCK ---
+                # === LOW STOCK ===
                 if lbl_stock:
                     lbl_stock.setText(f"{product.stock} left")
+                    # Style ONLY the label
                     lbl_stock.setStyleSheet(
                         "background-color: #FEF3C7; color: #D97706; border-radius: 4px; font-weight: 700; font-size: 10px; padding: 2px; border: none;")
 
-                # ORANGE BORDER, WHITE BG (Standard Gray Hover)
-                target_widget.setStyleSheet(style_template.format(
-                    border="2px solid #D97706",
-                    border_hover="2px solid #B45309"
-                ))
-
             else:
-                # --- IN STOCK ---
+                # === IN STOCK ===
                 if lbl_stock:
                     lbl_stock.setText(f"{product.stock} left")
+                    # Standard Green Badge
                     lbl_stock.setStyleSheet(
                         "background-color: #ECFEFF; color: #0E7490; padding: 2px; border-radius: 4px; font-weight: 700; font-size: 10px; border: none;")
-
-                # STANDARD GRAY BORDER, WHITE BG
-                target_widget.setStyleSheet(style_template.format(
-                    border="1px solid #E2E8F0",
-                    border_hover="1px solid #22D3EE"
-                ))
 
             self.layout.addWidget(card, row, col)
             col += 1
@@ -1933,6 +1860,7 @@ class ProductGrid_Controller:
         self.layout.addItem(spacer, row + 1, 0, 1, max_cols)
 
     def filter_products(self, search_text):
+        """Filters the currently loaded products."""
         text = search_text.lower().strip()
         filtered = [p for p in self.all_products if text in p.name.lower()]
         self.populate_grid(filtered)
@@ -1946,14 +1874,12 @@ class ProductGrid_Controller:
 ==================================================
 FILE: controllers\reports_controller.py
 ==================================================
-# controllers/reports_controller.py
 from PyQt6 import QtWidgets, uic, QtCore
-from PyQt6.QtWidgets import QScrollArea, QScrollBar
 import os
 
-# Import the ManagerDB wrapper to access helper methods like get_top_products
+from utils.ui_helper import set_icon, apply_hover_effect
 from models.db_manager import ManagerDB
-from utils.ui_helper import add_drop_shadow, set_icon, apply_hover_effect
+
 
 
 class ReportsController(QtCore.QObject):
@@ -1961,16 +1887,12 @@ class ReportsController(QtCore.QObject):
         super().__init__()
         self.view = view
         self.main_controller = main_controller
-
-        # FIX: Wrap the raw DatabaseManager in ManagerDB
-        # This gives us access to self.db.get_top_products() AND self.db.main_db.get_connection()
-        self.db = ManagerDB(main_controller.db)
+        self.db = ManagerDB(main_controller.db) #access to self.db.get_top_products() AND self.db.main_db.get_connection()
 
         self.setup_ui()
         self.refresh_data()
 
     def apply_modern_scrollbar_style(self, scroll_area):
-        """Applies a modern, transparent scrollbar style to a QScrollArea."""
         qss = """
         QScrollArea { border: none; background-color: transparent; }
         QScrollBar:vertical { border: none; background: transparent; width: 8px; }
@@ -1982,24 +1904,23 @@ class ReportsController(QtCore.QObject):
         scroll_area.setStyleSheet(scroll_area.styleSheet() + qss)
 
     def setup_ui(self):
-        # 1. Apply Hover Effect
+        #Hover Effect
         if hasattr(self.view, 'card_alert_stock'): apply_hover_effect(self.view.card_alert_stock)
         if hasattr(self.view, 'card_alert_expiry'): apply_hover_effect(self.view.card_alert_expiry)
         if hasattr(self.view, 'card_financial'): apply_hover_effect(self.view.card_financial)
 
-        # 2. Apply Scrollbar Style
+        #Scrollbar Style
         if hasattr(self.view, 'scrollArea_top_selling'):
             self.apply_modern_scrollbar_style(self.view.scrollArea_top_selling)
 
-        # 3. Icons
+        #Icons
         if hasattr(self.view, 'icon_stock'): set_icon(self.view.icon_stock, 'alert-triangle.svg', size=24)
         if hasattr(self.view, 'icon_exp'): set_icon(self.view.icon_exp, 'history.svg', size=24)
 
     def refresh_data(self):
-        # --- 1. Financial Overview (Manual Query) ---
+        #Financial(Manual Query)
         revenue = 0.0
         try:
-            # We access .main_db because self.db is now the ManagerDB wrapper
             conn = self.db.main_db.get_connection()
             if conn and conn.is_connected():
                 cursor = conn.cursor(dictionary=True)
@@ -4919,6 +4840,19 @@ FILE: views\dashboard_window.ui
               </widget>
              </item>
              <item>
+              <spacer name="horizontalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
               <widget class="QLabel" name="header_items">
                <property name="styleSheet">
                 <string>color: #94A3B8; font-weight: 700; font-size: 12px;</string>
@@ -4932,12 +4866,25 @@ FILE: views\dashboard_window.ui
               </widget>
              </item>
              <item>
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
               <widget class="QLabel" name="header_total">
                <property name="styleSheet">
                 <string>color: #94A3B8; font-weight: 700; font-size: 12px;</string>
                </property>
                <property name="text">
-                <string>TOTAL</string>
+                <string>TOTAL                                                      USER</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignmentFlag::AlignRight</set>
@@ -4945,7 +4892,7 @@ FILE: views\dashboard_window.ui
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer">
+              <spacer name="horizontalSpacer_4">
                <property name="orientation">
                 <enum>Qt::Orientation::Horizontal</enum>
                </property>
@@ -4954,8 +4901,8 @@ FILE: views\dashboard_window.ui
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>22</width>
-                 <height>20</height>
+                 <width>27</width>
+                 <height>0</height>
                 </size>
                </property>
               </spacer>
@@ -7083,6 +7030,29 @@ FILE: views\item_sale.ui
         </property>
         <property name="alignment">
          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_name">
+        <property name="styleSheet">
+         <string notr="true">color: #475569; font-family: &quot;Consolas&quot;; font-size: 13px; border: none;</string>
+        </property>
+        <property name="text">
+         <string>Cashier</string>
         </property>
        </widget>
       </item>

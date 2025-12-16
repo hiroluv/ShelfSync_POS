@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1076</width>
-    <height>632</height>
+    <width>1157</width>
+    <height>663</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -74,7 +74,7 @@
        <item>
         <widget class="QLabel" name="label_logo">
          <property name="styleSheet">
-          <string notr="true">font-size: 24px; font-weight: 800; color: #00BCD4; margin-bottom: 20px;</string>
+          <string notr="true">font-size: 24px; font-weight: 800; margin-bottom: 20px;</string>
          </property>
          <property name="text">
           <string>ShelfSync</string>
@@ -215,11 +215,17 @@
         </item>
         <item>
          <widget class="QLabel" name="label_dash_sub">
+          <property name="maximumSize">
+           <size>
+            <width>300</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="styleSheet">
-           <string notr="true">font-size: 16px; color: #64748B; /* Slate-500 */ margin-bottom: 20px;</string>
+           <string notr="true">font-size: 14px; color: #64748B; /* text-slate-600 */ margin-bottom: 20px;</string>
           </property>
           <property name="text">
-           <string>Welcome back, Manager.</string>
+           <string>Welcome back,</string>
           </property>
          </widget>
         </item>
@@ -532,6 +538,12 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>270</height>
+           </size>
+          </property>
           <property name="styleSheet">
            <string notr="true">QFrame#frame_table { background-color: white; border-radius: 16px; border: 1px solid #E2E8F0; margin: 5px; }</string>
           </property>
@@ -572,11 +584,11 @@
                 <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Policy::Maximum</enum>
+                <enum>QSizePolicy::Policy::Fixed</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>24</width>
+                 <width>40</width>
                  <height>20</height>
                 </size>
                </property>
@@ -593,6 +605,22 @@
               </widget>
              </item>
              <item>
+              <spacer name="horizontalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Policy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>50</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
               <widget class="QLabel" name="header_items">
                <property name="styleSheet">
                 <string>color: #94A3B8; font-weight: 700; font-size: 12px;</string>
@@ -606,12 +634,28 @@
               </widget>
              </item>
              <item>
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Policy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>122</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
               <widget class="QLabel" name="header_total">
                <property name="styleSheet">
                 <string>color: #94A3B8; font-weight: 700; font-size: 12px;</string>
                </property>
                <property name="text">
-                <string>TOTAL</string>
+                <string>TOTAL                                                                     USER</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignmentFlag::AlignRight</set>
@@ -619,17 +663,17 @@
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer">
+              <spacer name="horizontalSpacer_4">
                <property name="orientation">
                 <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Policy::Maximum</enum>
+                <enum>QSizePolicy::Policy::Fixed</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>22</width>
-                 <height>20</height>
+                 <width>100</width>
+                 <height>0</height>
                 </size>
                </property>
               </spacer>
@@ -660,8 +704,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>670</width>
-                <height>80</height>
+                <width>751</width>
+                <height>113</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="layout_sales_list">

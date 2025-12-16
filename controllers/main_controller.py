@@ -165,7 +165,7 @@ class MainController(QMainWindow):
             else:
                 self.set_btn_icon(btn, btn.path_normal)
 
-        # Refresh Data on Page Switch
+        # Refresh Data when mag switch page (no more re-running yay)
         if index == 0:
             self.dashboard_controller.refresh_data()
         elif index == 1:

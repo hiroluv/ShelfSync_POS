@@ -8,12 +8,10 @@ from utils.ui_helper import set_icon, add_drop_shadow, Overlay
 
 class AuditWindowController(QDialog):
     def __init__(self, main_controller):
-        # 1. Parent MUST be main_controller
         super().__init__(parent=main_controller)
         self.main_controller = main_controller
         self.db = main_controller.db
-
-        # Variable for dragging
+        #drag
         self.old_pos = None
 
 
@@ -30,14 +28,12 @@ class AuditWindowController(QDialog):
         try:
             uic.loadUi(ui_path, self)
 
-            # Apply Shadow to the internal frame named 'dialog_content'
-            # This ensures the white box pops out, while the rest is transparent
+            # shadows
             content = self.findChild(QFrame, 'dialog_content')
             if content:
                 add_drop_shadow(content)
             else:
-                # Fallback: if 'dialog_content' isn't found, try the first frame
-                # (You should ensure your .ui file has a main QFrame wrapping everything)
+                # try first frame
                 frames = self.findChildren(QFrame)
                 if frames: add_drop_shadow(frames[0])
 
@@ -49,7 +45,7 @@ class AuditWindowController(QDialog):
         self.load_data()
 
     def showEvent(self, event):
-        """When dialog opens, show the dim overlay on the main window."""
+        """When dialog opens, meron blurry effect"""
         if self.overlay:
             # 1. Resize overlay to cover the Main Window
             self.overlay.resize(self.main_controller.size())

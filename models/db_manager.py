@@ -44,6 +44,20 @@ class ManagerDB:
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor()
+
+                # --- SAFETY CHECK: Prevent deleting the last Manager ---
+                cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+                row = cursor.fetchone()
+
+                if row and row[0] == 'Manager':
+                    cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'Manager'")
+                    manager_count = cursor.fetchone()[0]
+
+                    if manager_count <= 1:
+                        print("Error: Cannot delete the last Manager account.")
+                        return False
+                # -------------------------------------------------------
+
                 cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
                 conn.commit()
                 return True
@@ -228,8 +242,8 @@ class ManagerDB:
 
     def get_recent_sales(self, limit=10):
         """
-        Fetches individual ITEMS sold recently by joining sales, sale_items, and inventory tables.
-        This provides the product name, individual price, and quantity for the dashboard list.
+        Fetches RECENT TRANSACTIONS from the sales table.
+        Returns: total_amount, items_count, cashier_name, sale_timestamp
         """
         sales = []
         conn = self.main_db.get_connection()
@@ -237,19 +251,17 @@ class ManagerDB:
             try:
                 cursor = conn.cursor(dictionary=True)
 
-                # UPDATED QUERY: Joins tables to get specific item details instead of generic totals
+                # FIX: Select directly from 'sales' table to get the Receipt Summary
                 query = """
-                        SELECT i.name as product_name, \
-                               si.price, \
-                               si.quantity, \
-                               s.cashier_name, \
-                               s.sale_timestamp
-                        FROM sale_items si
-                                 JOIN sales s ON si.sale_id = s.id
-                                 JOIN inventory i ON si.product_id = i.id
-                        ORDER BY s.sale_timestamp DESC
-                            LIMIT %s
-                        """
+                    SELECT 
+                        total_amount, 
+                        items_count, 
+                        cashier_name, 
+                        sale_timestamp 
+                    FROM sales 
+                    ORDER BY sale_timestamp DESC 
+                    LIMIT %s
+                """
                 cursor.execute(query, (limit,))
                 sales = cursor.fetchall()
             except Error as e:

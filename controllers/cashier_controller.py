@@ -25,7 +25,7 @@ class CashierController(QMainWindow):
         try:
             uic.loadUi(ui_path, self)
         except Exception as e:
-            print(f"CRITICAL ERROR: Could not load UI file at {ui_path}\nError: {e}")
+            print(f"dili ma load ang UI file sa {ui_path}\nbro: {e}")
             return
 
         # --- Product Grid ---
@@ -38,20 +38,17 @@ class CashierController(QMainWindow):
         # --- Cart Controller ---
         if hasattr(self, 'scrollArea_cart'):
             self.cart_controller = Cart_Controller(self, self.scrollArea_cart, self.db)
-        else:
-            print("Error: 'scrollArea_cart' widget not found in UI")
 
-        # 3. SETUP VISUALS
+        # VISUALS
         self.setup_ui()
-
-        # 4. SETUP CONNECTIONS
+        # CONNECTIONS
         self.setup_connections()
 
     def setup_ui(self):
-        """Sets up static UI elements like Icons."""
+        """Sets up ang svg icons"""
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        # --- Search Icon ---
+        #Search Icon
         if hasattr(self, 'input_search'):
             search_icon_path = os.path.join(base_path, 'assets', 'icons', 'search.svg')
             if os.path.exists(search_icon_path):
@@ -59,7 +56,7 @@ class CashierController(QMainWindow):
                 search_action.setIcon(QIcon(search_icon_path))
                 self.input_search.addAction(search_action, QLineEdit.ActionPosition.LeadingPosition)
 
-        # --- Cart Icon ---
+        #Cart Icon
         if hasattr(self, 'lbl_cart_title'):
             cart_icon_path = os.path.join(base_path, 'assets', 'icons', 'cart.svg')
             cart_icon_path = cart_icon_path.replace('\\', '/')
@@ -71,9 +68,9 @@ class CashierController(QMainWindow):
                 )
 
     def setup_connections(self):
-        """Connects signals and slots."""
+        """Connects slots."""
 
-        # 1. Product Grid -> Add to Cart
+        #Product Grid -> Add to Cart
         if hasattr(self, 'grid_controller') and hasattr(self, 'cart_controller'):
             if hasattr(self.grid_controller, 'product_clicked'):
                 self.grid_controller.product_clicked.connect(self.handle_add_product)
@@ -87,15 +84,15 @@ class CashierController(QMainWindow):
         if hasattr(self, 'btn_checkout'):
             self.btn_checkout.clicked.connect(self.handle_checkout)
 
-        # 3. Exit / Logout Button
+        # 3. Exit Button
         if hasattr(self, 'btn_logout'):
-            # Connect to handle_logout instead of close() directly
+            # Connect to handle_logout instead na close() directly
             self.btn_logout.clicked.connect(self.handle_logout)
             print("DEBUG: Exit button connected successfully.")
         else:
             print("WARNING: 'btn_exit' not found in UI. Please check the button name in Qt Designer.")
 
-    # --- ACTIONs ---
+    # --- ACTIONs cutieeee---
 
     def handle_logout(self):
         """Handles the exit button click."""

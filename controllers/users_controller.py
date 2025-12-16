@@ -1,4 +1,3 @@
-# controllers/users_controller.py
 from PyQt6 import QtWidgets, uic, QtCore
 import os
 
@@ -27,10 +26,9 @@ class UsersController:
             self.view.btn_add_user.clicked.connect(self.open_add_user_dialog)
 
     def refresh_data(self):
-        # Correct layout name from user_accounts_window.ui
         layout = self.view.layout_users_list
 
-        # Clear existing items
+        # Clear existing items (Keeping > 1 preserves the bottom spacer if you have one)
         while layout.count() > 1:
             child = layout.takeAt(0)
             if child.widget():
@@ -54,19 +52,20 @@ class UsersController:
             try:
                 row_widget = uic.loadUi(ui_path)
 
-                # Labels from your item_user.ui — exact names
-                row_widget.lbl_name.setText(user.name)
-                row_widget.lbl_role.setText(user.role)
+                # Set Labels
+                if hasattr(row_widget, 'lbl_name'):
+                    row_widget.lbl_name.setText(user.name)
+                if hasattr(row_widget, 'lbl_role'):
+                    row_widget.lbl_role.setText(user.role)
 
-                # No lbl_initial — use the circle frame or skip
-                # If you have a circle QLabel for initial, name it lbl_initial in UI
-                # For now, we skip it since it's not in your current UI
-
-                # Remove button
+                # Connect Delete Button
+                # FIX: Capture 'uid' in the lambda so it doesn't default to the last loop item
                 btn_remove = row_widget.findChild(QtWidgets.QPushButton, 'btn_remove')
                 if btn_remove:
-                    btn_remove.clicked.connect(lambda checked, uid=user.id: self.remove_user(uid))
+                    btn_remove.clicked.connect(lambda checked, uid=user.id: self.delete_user_action(uid))
 
+                # Insert at top (index 0) to show new users first?
+                # Or use layout.addWidget(row_widget) if you want ID order.
                 layout.insertWidget(0, row_widget)
 
             except Exception as e:
@@ -116,17 +115,49 @@ class UsersController:
             print(f"Error in add user dialog: {e}")
             show_toast(self.main_controller, "Failed to open Add User dialog.", type="error")
 
-    def remove_user(self, user_id):
-        reply = QtWidgets.QMessageBox.question(
-            self.view, "Confirm Remove",
-            "Are you sure you want to remove this user?",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No
-        )
+    def delete_user_action(self, user_id):
+        # 1. Create the dialog instance manually (instead of using static .question)
+        msg_box = QtWidgets.QMessageBox(self.view)
+        msg_box.setWindowTitle("Confirm Delete")
+        msg_box.setText("Are you sure you want to delete this user?")
+        msg_box.setIcon(QtWidgets.QMessageBox.Icon.Question)
+        msg_box.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+
+        # 2. Apply a specific style to fix the visibility issue
+        # We force a dark background and ensure buttons are visible
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: #1F2937;  /* Dark Grey Background */
+            }
+            QLabel {
+                color: white;               /* White Text */
+                font-size: 14px;
+                background: none;
+            }
+            QPushButton {
+                background-color: #374151;  /* Button Color */
+                color: white;
+                border: 1px solid #4B5563;
+                border-radius: 4px;
+                padding: 6px 12px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #4B5563;  /* Lighter on Hover */
+            }
+        """)
+
+        # 3. Show the dialog
+        overlay = Overlay(self.main_controller)
+        overlay.show()
+        reply = msg_box.exec()
+        overlay.close()
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            success = self.db.remove_user(user_id)
+            success = self.db.delete_user(user_id)
+
             if success:
-                show_toast(self.main_controller, "User removed successfully!", type="success")
+                show_toast(self.main_controller, "User deleted successfully!", type="success")
                 self.refresh_data()
             else:
-                show_toast(self.main_controller, "Cannot remove last Manager.", type="error")
+                show_toast(self.main_controller, "Cannot delete the last Manager account.", type="error")

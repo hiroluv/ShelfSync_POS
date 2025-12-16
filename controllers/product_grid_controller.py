@@ -30,16 +30,11 @@ class ProductGrid_Controller:
         for product in products:
             card = ProductCard(product)
 
-
             #  1. SETUP & TRANSPARENCy
-
             card.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
             card.setStyleSheet("background-color: transparent; border: none;")
 
-
             #  2. POPULATE DATA
-
-
             # --- NAME ---
             lbl_name = card.findChild(QLabel, 'lbl_name')
             if lbl_name:
@@ -69,13 +64,12 @@ class ProductGrid_Controller:
                     lbl_image.setText("No Image")
                     lbl_image.setStyleSheet("color: #94A3B8; font-size: 10px;")
 
-            # Connect Click
+            #Click
             card.add_to_cart_clicked.connect(self.parent.handle_add_product)
 
 
             #  3. STOCK STATUS
-
-            # Find button only to fix the "stay highlighted" bug
+            # Find button only, para dili ma highlight ang card
             btn_card = card.findChild(QPushButton, 'btn_card')
             if btn_card:
                 btn_card.setFocusPolicy(Qt.FocusPolicy.NoFocus)

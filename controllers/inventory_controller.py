@@ -135,7 +135,7 @@ class InventoryController:
         # Sort (Newest First)
         filtered_products.sort(key=lambda x: x.id, reverse=True)
 
-        # === RENDER ROWS ===
+        # ROWS
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         row_ui_path = os.path.join(base_path, 'views', 'item_inventory.ui')
 
@@ -146,13 +146,7 @@ class InventoryController:
                 # Set Data
                 if hasattr(row_widget, 'lbl_name'): row_widget.lbl_name.setText(product.name)
                 if hasattr(row_widget, 'lbl_category'): row_widget.lbl_category.setText(product.category)
-
-                # --- FIX APPLIED HERE ---
-                # Changed 'lbl_stock_val' to 'lbl_stock' to match item_inventory.ui
-                if hasattr(row_widget, 'lbl_stock'):
-                    row_widget.lbl_stock.setText(str(product.stock))
-                # ------------------------
-
+                if hasattr(row_widget, 'lbl_stock'):row_widget.lbl_stock.setText(str(product.stock))
                 if hasattr(row_widget, 'lbl_price'): row_widget.lbl_price.setText(f"₱{product.selling_price:,.2f}")
 
                 # Status Badge
@@ -170,13 +164,10 @@ class InventoryController:
                         row_widget.lbl_status.setStyleSheet(
                             "background-color: #ECFDF5; color: #059669; border-radius: 12px; font-weight: bold;")
 
-                # Connect Edit Button
+                #Edit Button
                 if hasattr(row_widget, 'btn_edit'):
                     row_widget.btn_edit.clicked.connect(lambda _, p=product: self.open_edit_dialog(p))
-
-                # FIX 3: INSERT ABOVE SPACER
-                # Always insert at (count() - 1) to keep the spacer at the bottom
-                spacer_index = layout.count() - 1
+                spacer_index = layout.count() - 1   # Always insert at (count() - 1) to keep the spacer at the bottom
                 layout.insertWidget(spacer_index, row_widget)
 
             except Exception as e:
@@ -205,7 +196,7 @@ class InventoryController:
             overlay = Overlay(self.main_controller)
             overlay.show()
 
-            # FIX 4: SAFE USER CHECK
+            #USER CHECK
             if hasattr(self.main_controller, 'user') and self.main_controller.user:
                 current_user = self.main_controller.user.name
             else:

@@ -1,11 +1,9 @@
-# controllers/reports_controller.py
 from PyQt6 import QtWidgets, uic, QtCore
-from PyQt6.QtWidgets import QScrollArea, QScrollBar
 import os
 
-# Import the ManagerDB wrapper to access helper methods like get_top_products
+from utils.ui_helper import set_icon, apply_hover_effect
 from models.db_manager import ManagerDB
-from utils.ui_helper import add_drop_shadow, set_icon, apply_hover_effect
+
 
 
 class ReportsController(QtCore.QObject):
@@ -13,16 +11,12 @@ class ReportsController(QtCore.QObject):
         super().__init__()
         self.view = view
         self.main_controller = main_controller
-
-        # FIX: Wrap the raw DatabaseManager in ManagerDB
-        # This gives us access to self.db.get_top_products() AND self.db.main_db.get_connection()
-        self.db = ManagerDB(main_controller.db)
+        self.db = ManagerDB(main_controller.db) #access to self.db.get_top_products() AND self.db.main_db.get_connection()
 
         self.setup_ui()
         self.refresh_data()
 
     def apply_modern_scrollbar_style(self, scroll_area):
-        """Applies a modern, transparent scrollbar style to a QScrollArea."""
         qss = """
         QScrollArea { border: none; background-color: transparent; }
         QScrollBar:vertical { border: none; background: transparent; width: 8px; }
@@ -34,24 +28,23 @@ class ReportsController(QtCore.QObject):
         scroll_area.setStyleSheet(scroll_area.styleSheet() + qss)
 
     def setup_ui(self):
-        # 1. Apply Hover Effect
+        #Hover Effect
         if hasattr(self.view, 'card_alert_stock'): apply_hover_effect(self.view.card_alert_stock)
         if hasattr(self.view, 'card_alert_expiry'): apply_hover_effect(self.view.card_alert_expiry)
         if hasattr(self.view, 'card_financial'): apply_hover_effect(self.view.card_financial)
 
-        # 2. Apply Scrollbar Style
+        #Scrollbar Style
         if hasattr(self.view, 'scrollArea_top_selling'):
             self.apply_modern_scrollbar_style(self.view.scrollArea_top_selling)
 
-        # 3. Icons
+        #Icons
         if hasattr(self.view, 'icon_stock'): set_icon(self.view.icon_stock, 'alert-triangle.svg', size=24)
         if hasattr(self.view, 'icon_exp'): set_icon(self.view.icon_exp, 'history.svg', size=24)
 
     def refresh_data(self):
-        # --- 1. Financial Overview (Manual Query) ---
+        #Financial(Manual Query)
         revenue = 0.0
         try:
-            # We access .main_db because self.db is now the ManagerDB wrapper
             conn = self.db.main_db.get_connection()
             if conn and conn.is_connected():
                 cursor = conn.cursor(dictionary=True)
