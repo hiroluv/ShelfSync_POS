@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1100</width>
-    <height>700</height>
+    <width>1116</width>
+    <height>699</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -32,7 +32,6 @@
    <property name="bottomMargin">
     <number>40</number>
    </property>
-
    <item>
     <layout class="QHBoxLayout" name="header_layout">
      <item>
@@ -60,27 +59,32 @@
      </item>
      <item>
       <widget class="QPushButton" name="generateReportBtn">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>45</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>170</width>
+         <height>45</height>
+        </size>
+       </property>
        <property name="cursor">
         <cursorShape>PointingHandCursor</cursorShape>
        </property>
        <property name="styleSheet">
         <string notr="true">
-            QPushButton {
-                background-color: #2563EB;
-                color: white;
-                border-radius: 8px;
-                padding: 10px 20px;
-                font-weight: 600;
-                font-size: 14px;
-                border: none;
-            }
+           QPushButton { background-color: #0891B2; color: white; border: none; padding: 12px; border-radius: 14px; font-weight: bold; } 
+
             QPushButton:hover {
-                background-color: #1D4ED8;
+                background-color: #06B6D4;;
             }
             QPushButton:pressed {
                 background-color: #1E40AF;
             }
-        </string>
+       </string>
        </property>
        <property name="text">
         <string>📄 Generate New Report</string>
@@ -323,8 +327,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>646</width>
-             <height>298</height>
+             <width>662</width>
+             <height>295</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="layout_top_selling">

@@ -6,60 +6,225 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>385</width>
-    <height>290</height>
+    <width>493</width>
+    <height>351</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Generate Report</string>
   </property>
   <property name="styleSheet">
-   <string notr="true"/>
+   <string notr="true">
+    QDialog {
+
+        background-color: #FFFFFF;
+
+    }
+
+    QLabel {
+
+        color: #475569;
+
+        font-family: &quot;Segoe UI&quot;;
+
+        font-size: 14px;
+
+    }
+
+    QGroupBox {
+
+        border: 1px solid #E2E8F0;
+
+        border-radius: 8px;
+
+        margin-top: 24px;
+
+        font-family: &quot;Segoe UI&quot;;
+
+        font-weight: 600;
+
+        color: #475569;
+
+    }
+
+    QGroupBox::title {
+
+        subcontrol-origin: margin;
+
+        subcontrol-position: top left;
+
+        left: 10px;
+
+        padding: 0 5px;
+
+    }
+
+    QComboBox, QDateEdit {
+
+        border: 1px solid #CBD5E1;
+
+        border-radius: 6px;
+
+        padding: 6px 12px;
+		background:rgb(118, 118, 118);
+        background-color: #F8FAFC;
+
+
+        color: #334155;
+
+        font-family: &quot;Segoe UI&quot;;
+
+        font-size: 13px;
+
+    }
+
+    QComboBox:hover, QDateEdit:hover {
+
+        border-color: #94A3B8;
+
+    }
+
+    QComboBox::drop-down {
+
+        border: 1px solid #CBD5E1;
+
+        width: 20px;
+
+    }
+
+    QPushButton {
+
+        border: 1px solid #CBD5E1;
+
+        border-radius: 6px;
+
+        padding: 8px 16px;
+
+        background-color: #FFFFFF;
+
+        color: #475569;
+
+        font-family: &quot;Segoe UI&quot;;
+
+        font-weight: 600;
+
+    }
+
+    QPushButton:hover {
+
+        background-color: #F1F5F9;
+
+        border-color: #94A3B8;
+
+    }
+
+    QPushButton#exportBtn {
+
+        background-color: #2563EB;
+
+        color: white;
+
+        border: 1px solid #2563EB;
+
+    }
+
+    QPushButton#exportBtn: QPushButton:hover { background-color: #0E7490; }
+
+    
+
+   </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>16</number>
+   </property>
+   <property name="leftMargin">
+    <number>24</number>
+   </property>
+   <property name="topMargin">
+    <number>24</number>
+   </property>
+   <property name="rightMargin">
+    <number>24</number>
+   </property>
+   <property name="bottomMargin">
+    <number>24</number>
+   </property>
    <item>
-    <widget class="QLabel" name="label_3">
-     <property name="font">
-      <font>
-       <pointsize>10</pointsize>
-       <bold>true</bold>
-      </font>
+    <layout class="QVBoxLayout" name="inputTypeLayout">
+     <property name="spacing">
+      <number>8</number>
      </property>
-     <property name="text">
-      <string>Report Type</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QComboBox" name="reportTypeCombo">
      <item>
-      <property name="text">
-       <string>Sales Report</string>
-      </property>
+      <widget class="QLabel" name="label_3">
+       <property name="font">
+        <font>
+         <family>Segoe UI</family>
+         <pointsize>-1</pointsize>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background: none;</string>
+       </property>
+       <property name="text">
+        <string>Report Type</string>
+       </property>
+      </widget>
      </item>
      <item>
-      <property name="text">
-       <string>Inventory Valuation</string>
-      </property>
+      <widget class="QComboBox" name="reportTypeCombo">
+       <property name="styleSheet">
+        <string notr="true">color: #475569;</string>
+       </property>
+       <item>
+        <property name="text">
+         <string>Sales Report</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Inventory Valuation</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Low Stock Alert</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Audit Logs</string>
+        </property>
+       </item>
+      </widget>
      </item>
-     <item>
-      <property name="text">
-       <string>Low Stock Alert</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Audit Logs</string>
-      </property>
-     </item>
-    </widget>
+    </layout>
    </item>
    <item>
     <widget class="QGroupBox" name="dateGroup">
      <property name="title">
-      <string>Date Range (For Sales/Audit)</string>
+      <string>Date Range</string>
      </property>
      <layout class="QFormLayout" name="formLayout">
+      <property name="horizontalSpacing">
+       <number>12</number>
+      </property>
+      <property name="verticalSpacing">
+       <number>12</number>
+      </property>
+      <property name="leftMargin">
+       <number>16</number>
+      </property>
+      <property name="topMargin">
+       <number>20</number>
+      </property>
+      <property name="rightMargin">
+       <number>16</number>
+      </property>
+      <property name="bottomMargin">
+       <number>16</number>
+      </property>
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
@@ -69,6 +234,9 @@
       </item>
       <item row="0" column="1">
        <widget class="QDateEdit" name="startDateEdit">
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
         <property name="displayFormat">
          <string>yyyy-MM-dd</string>
         </property>
@@ -112,6 +280,9 @@
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="spacing">
+      <number>12</number>
+     </property>
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
@@ -127,6 +298,24 @@
      </item>
      <item>
       <widget class="QPushButton" name="cancelBtn">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="cursor">
+        <cursorShape>PointingHandCursor</cursorShape>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">border-radius: 8px</string>
+       </property>
        <property name="text">
         <string>Cancel</string>
        </property>
@@ -134,8 +323,23 @@
      </item>
      <item>
       <widget class="QPushButton" name="exportBtn">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>36</height>
+        </size>
+       </property>
+       <property name="cursor">
+        <cursorShape>PointingHandCursor</cursorShape>
+       </property>
        <property name="styleSheet">
-        <string>background-color: #2980b9; color: white; font-weight: bold;</string>
+        <string notr="true">QPushButton { background-color: #0891B2; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; } QPushButton:hover { background-color: #06B6D4; }</string>
        </property>
        <property name="text">
         <string>Export PDF</string>

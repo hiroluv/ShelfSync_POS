@@ -1,7 +1,7 @@
 from PyQt6 import QtWidgets, uic, QtCore
 import os
 
-from utils.ui_helper import set_icon, apply_hover_effect
+from utils.ui_helper import set_icon, apply_hover_effect, Overlay
 from models.db_manager import ManagerDB
 from controllers.report_dialog_controller import ReportDialogController
 
@@ -47,9 +47,13 @@ class ReportsController(QtCore.QObject):
     # [NEW] Method to open the dialog
     def open_report_dialog(self):
         try:
+            overlay = Overlay(self.main_controller)
+            overlay.show() #blur effect again
             # Pass self.view as parent so the dialog centers on the reports window
             dialog = ReportDialogController(parent=self.view)
             dialog.exec()
+
+            overlay.close()
         except Exception as e:
             print(f"Error opening report dialog: {e}")
 
