@@ -32,11 +32,11 @@ class LoginController(QMainWindow):
 
     def setup_ui(self):
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        logo_path = os.path.join(base_path, 'assets', 'logo.svg')
+        logo_path = os.path.join(base_path, 'assets', 'logo.png')
 
         if os.path.exists(logo_path):
             pixmap = QPixmap(logo_path)
-            scaled_pixmap = pixmap.scaled(250, 250, QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+            scaled_pixmap = pixmap.scaled(300, 300, QtCore.Qt.AspectRatioMode.KeepAspectRatio,
                                           QtCore.Qt.TransformationMode.SmoothTransformation)
             self.lbl_logo_icon.setPixmap(scaled_pixmap)
 

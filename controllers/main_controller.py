@@ -101,6 +101,21 @@ class MainController(QMainWindow):
         self.icon_folder_normal = os.path.join(base_path, 'assets', 'side_panel_icons')
         self.icon_folder_active = os.path.join(self.icon_folder_normal, 'active')
 
+        # --- [NEW] Load Logo Image ---
+        if hasattr(self, 'logo_image'):
+            logo_path = os.path.join(base_path, 'assets', 'logo.png')
+            if os.path.exists(logo_path):
+                pixmap = QtGui.QPixmap(logo_path)
+                scaled_pixmap = pixmap.scaled(
+                    32, 32,
+                    QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                    QtCore.Qt.TransformationMode.SmoothTransformation
+                )
+                self.logo_image.setPixmap(scaled_pixmap)
+            else:
+                print(f"Warning: Logo file not found at {logo_path}")
+        # -----------------------------
+
         self.sidebar_buttons = []
         if hasattr(self, 'btn_nav_dashboard'): self.sidebar_buttons.append((self.btn_nav_dashboard, "dashboard.svg"))
         if hasattr(self, 'btn_nav_inventory'): self.sidebar_buttons.append((self.btn_nav_inventory, "inventory.svg"))

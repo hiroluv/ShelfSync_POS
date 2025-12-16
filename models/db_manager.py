@@ -292,67 +292,99 @@ class ManagerDB:
                 conn.close()
         return items
 
-        # ... inside DatabaseManager class ...
+
+#================= REPORTING METHODS =================
 
     def get_sales_report_data(self, start_date, end_date):
-        # Matches your actual table structure: id, sale_timestamp, cashier_name, total_amount
-        query = """
-                SELECT id as invoice_id, \
-                       sale_timestamp as date,
-            cashier_name as cashier,
-            items_count,
-            total_amount
-                FROM sales
-                WHERE DATE (sale_timestamp) BETWEEN %s \
-                  AND %s
-                ORDER BY sale_timestamp DESC \
+        """Fetches sales between dates for the report."""
+        data = []
+        conn = self.main_db.get_connection()
+        if conn and conn.is_connected():
+            try:
+                cursor = conn.cursor(dictionary=True)
+                query = """
+                SELECT 
+                    id as invoice_id,
+                    sale_timestamp as date,
+                    cashier_name as cashier,
+                    items_count,
+                    total_amount
+                FROM sales 
+                WHERE DATE(sale_timestamp) BETWEEN %s AND %s
+                ORDER BY sale_timestamp DESC
                 """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query, (start_date, end_date))
-        return cursor.fetchall()
+                cursor.execute(query, (start_date, end_date))
+                data = cursor.fetchall()
+                cursor.close()
+            except Error as e:
+                print(f"Error fetching sales report: {e}")
+            finally:
+                conn.close()
+        return data
 
     def get_inventory_valuation_data(self):
-        # Calculates potential revenue sitting in stock
-        query = """
-                SELECT id, \
-                       name, \
-                       category, \
-                       stock, \
-                       selling_price, \
-                       (stock * selling_price) as total_value
+        """Calculates total value of stock."""
+        data = []
+        conn = self.main_db.get_connection()
+        if conn and conn.is_connected():
+            try:
+                cursor = conn.cursor(dictionary=True)
+                query = """
+                SELECT 
+                    id, name, category, stock, selling_price,
+                    (stock * selling_price) as total_value
                 FROM inventory
-                ORDER BY category, name \
+                ORDER BY category, name
                 """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query)
-        return cursor.fetchall()
+                cursor.execute(query)
+                data = cursor.fetchall()
+                cursor.close()
+            except Error as e:
+                print(f"Error fetching inventory valuation: {e}")
+            finally:
+                conn.close()
+        return data
 
     def get_low_stock_data(self):
-        # Filters only items below threshold
-        query = """
-                SELECT id, \
-                       name, \
-                       category, \
-                       stock, \
-                       threshold
+        """Fetches items below threshold."""
+        data = []
+        conn = self.main_db.get_connection()
+        if conn and conn.is_connected():
+            try:
+                cursor = conn.cursor(dictionary=True)
+                query = """
+                SELECT id, name, category, stock, threshold
                 FROM inventory
                 WHERE stock <= threshold
-                ORDER BY stock ASC \
+                ORDER BY stock ASC
                 """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query)
-        return cursor.fetchall()
+                cursor.execute(query)
+                data = cursor.fetchall()
+                cursor.close()
+            except Error as e:
+                print(f"Error fetching low stock: {e}")
+            finally:
+                conn.close()
+        return data
 
     def get_audit_log_data(self, start_date, end_date):
-        # Security trail
-        query = """
-                SELECT
-                    timestamp, user_name, action, details
+        """Fetches audit logs between dates."""
+        data = []
+        conn = self.main_db.get_connection()
+        if conn and conn.is_connected():
+            try:
+                cursor = conn.cursor(dictionary=True)
+                query = """
+                SELECT timestamp, user_name, action, details
                 FROM audit_logs
-                WHERE DATE (timestamp) BETWEEN %s \
-                  AND %s
-                ORDER BY timestamp DESC \
+                WHERE DATE(timestamp) BETWEEN %s AND %s
+                ORDER BY timestamp DESC
                 """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query, (start_date, end_date))
-        return cursor.fetchall()
+                cursor.execute(query, (start_date, end_date))
+                data = cursor.fetchall()
+                cursor.close()
+            except Error as e:
+                print(f"Error fetching audit logs: {e}")
+            finally:
+                conn.close()
+        return data
