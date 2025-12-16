@@ -105,16 +105,13 @@ class InventoryController:
             button.setStyleSheet(button.active_style)
 
     def refresh_data(self, filter_type="all"):
-        # FIX 1: TARGET THE SPECIFIC LAYOUT FROM XML
-        # The .ui file has a vertical layout named 'layout_inventory_list' inside 'scrollContents'
+
         if not hasattr(self.view, 'layout_inventory_list'):
             print("CRITICAL ERROR: 'layout_inventory_list' not found in UI.")
             return
 
         layout = self.view.layout_inventory_list
 
-        # FIX 2: PRESERVE THE SPACER
-        # Clear all widgets EXCEPT the last one (which is the vertical spacer defined in XML)
         while layout.count() > 1:
             item = layout.takeAt(0)
             if item.widget():

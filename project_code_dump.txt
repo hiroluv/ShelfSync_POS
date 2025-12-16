@@ -17,6 +17,7 @@ ShelfSync_POS/
         perishables_controller.py
         product_grid_controller.py
         reports_controller.py
+        report_dialog_controller.py
         users_controller.py
         __init__.py
     models/
@@ -26,6 +27,7 @@ ShelfSync_POS/
         entities.py
         __init__.py
     utils/
+        pdf_generator.py
         toast_notification.py
         ui_helper.py
         __init__.py
@@ -50,6 +52,7 @@ ShelfSync_POS/
         perishables_window.ui
         product_card.py
         reports_window.ui
+        report_dialog.ui
         user_accounts_window.ui
         __init__.py
 
@@ -2120,6 +2123,78 @@ class ReportsController(QtCore.QObject):
         layout.addItem(spacer)
 
 ==================================================
+FILE: controllers\report_dialog_controller.py
+==================================================
+from PyQt6.QtWidgets import QDialog, QFileDialog, QMessageBox
+from PyQt6.QtCore import QDate
+from PyQt6.uic import loadUi
+from datetime import datetime
+
+from models.db_manager import DatabaseManager
+from utils.pdf_generator import PDFReportGenerator
+
+
+class ReportDialogController(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        loadUi("views/report_dialog.ui", self)
+        self.db = DatabaseManager()
+        self.setup_ui()
+
+    def setup_ui(self):
+        # Default dates: 1st of month to today
+        now = datetime.now()
+        self.startDateEdit.setDate(QDate(now.year, now.month, 1))
+        self.endDateEdit.setDate(QDate.currentDate())
+
+        self.exportBtn.clicked.connect(self.handle_export)
+        self.cancelBtn.clicked.connect(self.close)
+
+    def handle_export(self):
+        rpt_type = self.reportTypeCombo.currentText()
+        start = self.startDateEdit.date().toString("yyyy-MM-dd")
+        end = self.endDateEdit.date().toString("yyyy-MM-dd")
+
+        # 1. Fetch Data
+        data = []
+        if rpt_type == "Sales Report":
+            data = self.db.get_sales_report_data(start, end)
+            filename = f"Sales_Report_{start}_{end}.pdf"
+        elif rpt_type == "Inventory Valuation":
+            data = self.db.get_inventory_valuation_data()
+            filename = f"Inventory_Value_{end}.pdf"
+        elif rpt_type == "Low Stock Alert":
+            data = self.db.get_low_stock_data()
+            filename = f"Low_Stock_{end}.pdf"
+        elif rpt_type == "Audit Logs":
+            data = self.db.get_audit_log_data(start, end)
+            filename = f"Audit_Logs_{start}_{end}.pdf"
+
+        if not data:
+            QMessageBox.warning(self, "No Data", f"No records found for {rpt_type}.")
+            return
+
+        # 2. Save Dialog
+        path, _ = QFileDialog.getSaveFileName(self, "Save Report", filename, "PDF Files (*.pdf)")
+
+        if path:
+            try:
+                gen = PDFReportGenerator(path)
+                if rpt_type == "Sales Report":
+                    gen.generate_sales_report(data, start, end)
+                elif rpt_type == "Inventory Valuation":
+                    gen.generate_inventory_report(data, "Valuation")
+                elif rpt_type == "Low Stock Alert":
+                    gen.generate_inventory_report(data, "LowStock")
+                elif rpt_type == "Audit Logs":
+                    gen.generate_audit_report(data, start, end)
+
+                QMessageBox.information(self, "Success", "Report Generated Successfully!")
+                self.close()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", str(e))
+
+==================================================
 FILE: controllers\users_controller.py
 ==================================================
 from PyQt6 import QtWidgets, uic, QtCore
@@ -2805,6 +2880,71 @@ class ManagerDB:
                 conn.close()
         return items
 
+        # ... inside DatabaseManager class ...
+
+    def get_sales_report_data(self, start_date, end_date):
+        # Matches your actual table structure: id, sale_timestamp, cashier_name, total_amount
+        query = """
+                SELECT id as invoice_id, \
+                       sale_timestamp as date,
+            cashier_name as cashier,
+            items_count,
+            total_amount
+                FROM sales
+                WHERE DATE (sale_timestamp) BETWEEN %s \
+                  AND %s
+                ORDER BY sale_timestamp DESC \
+                """
+        cursor = self.connection.cursor(dictionary=True)
+        cursor.execute(query, (start_date, end_date))
+        return cursor.fetchall()
+
+    def get_inventory_valuation_data(self):
+        # Calculates potential revenue sitting in stock
+        query = """
+                SELECT id, \
+                       name, \
+                       category, \
+                       stock, \
+                       selling_price, \
+                       (stock * selling_price) as total_value
+                FROM inventory
+                ORDER BY category, name \
+                """
+        cursor = self.connection.cursor(dictionary=True)
+        cursor.execute(query)
+        return cursor.fetchall()
+
+    def get_low_stock_data(self):
+        # Filters only items below threshold
+        query = """
+                SELECT id, \
+                       name, \
+                       category, \
+                       stock, \
+                       threshold
+                FROM inventory
+                WHERE stock <= threshold
+                ORDER BY stock ASC \
+                """
+        cursor = self.connection.cursor(dictionary=True)
+        cursor.execute(query)
+        return cursor.fetchall()
+
+    def get_audit_log_data(self, start_date, end_date):
+        # Security trail
+        query = """
+                SELECT
+                    timestamp, user_name, action, details
+                FROM audit_logs
+                WHERE DATE (timestamp) BETWEEN %s \
+                  AND %s
+                ORDER BY timestamp DESC \
+                """
+        cursor = self.connection.cursor(dictionary=True)
+        cursor.execute(query, (start_date, end_date))
+        return cursor.fetchall()
+
 ==================================================
 FILE: models\entities.py
 ==================================================
@@ -2851,6 +2991,138 @@ class DashboardStats:
 FILE: models\__init__.py
 ==================================================
 
+
+==================================================
+FILE: utils\pdf_generator.py
+==================================================
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from datetime import datetime
+
+
+class PDFReportGenerator:
+    def __init__(self, filename):
+        self.filename = filename
+        self.doc = SimpleDocTemplate(
+            filename,
+            pagesize=A4,
+            rightMargin=30, leftMargin=30,
+            topMargin=30, bottomMargin=30
+        )
+        self.elements = []
+        self.styles = getSampleStyleSheet()
+
+        # Define Custom Styles
+        self.styles.add(
+            ParagraphStyle(name='HeaderTitle', parent=self.styles['Heading1'], fontSize=18, alignment=1, spaceAfter=10,
+                           textColor=colors.HexColor("#2C3E50")))
+        self.styles.add(ParagraphStyle(name='SubHeader', parent=self.styles['Normal'], fontSize=10, alignment=1,
+                                       textColor=colors.HexColor("#7F8C8D")))
+
+    def _add_header(self, title, start_date=None, end_date=None):
+        """Adds the standard company header"""
+        self.elements.append(Paragraph(title, self.styles['HeaderTitle']))
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        date_range = f"Period: {start_date} to {end_date}" if start_date else "Report Date: " + datetime.now().strftime(
+            "%Y-%m-%d")
+
+        info_text = f"""
+        <b>ShelfSync POS System</b><br/>
+        {date_range}<br/>
+        Generated On: {timestamp}
+        """
+        self.elements.append(Paragraph(info_text, self.styles['SubHeader']))
+        self.elements.append(Spacer(1, 0.25 * inch))
+
+    def _create_table(self, data, col_widths):
+        """Creates a striped table with professional styling"""
+        t = Table(data, colWidths=col_widths)
+
+        # Base Style
+        style_cmds = [
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2980b9")),  # Blue Header
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]
+
+        # Zebra Striping
+        for i in range(1, len(data)):
+            bg = colors.whitesmoke if i % 2 == 0 else colors.white
+            style_cmds.append(('BACKGROUND', (0, i), (-1, i), bg))
+
+        t.setStyle(TableStyle(style_cmds))
+        return t
+
+    def generate_sales_report(self, data, start_date, end_date):
+        self._add_header("Sales Performance Report", start_date, end_date)
+
+        # Summary Section
+        total_rev = sum(float(x['total_amount']) for x in data)
+        summary = f"<b>Total Revenue:</b> P {total_rev:,.2f} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Transactions:</b> {len(data)}"
+        self.elements.append(Paragraph(summary, self.styles['Normal']))
+        self.elements.append(Spacer(1, 0.15 * inch))
+
+        # Table Data
+        table_data = [['Inv #', 'Date/Time', 'Cashier', 'Items', 'Total']]
+        for row in data:
+            dt = row['date'].strftime("%Y-%m-%d %H:%M") if hasattr(row['date'], 'strftime') else str(row['date'])
+            table_data.append([
+                str(row['invoice_id']), dt, row['cashier'], str(row['items_count']),
+                f"P {float(row['total_amount']):,.2f}"
+            ])
+
+        self.elements.append(self._create_table(table_data, [0.8 * inch, 2 * inch, 2 * inch, 1 * inch, 1.5 * inch]))
+        self.doc.build(self.elements)
+
+    def generate_inventory_report(self, data, report_type="Valuation"):
+        title = "Inventory Valuation Report" if report_type == "Valuation" else "Low Stock Alert Report"
+        self._add_header(title)
+
+        if report_type == "Valuation":
+            headers = ['ID', 'Product Name', 'Category', 'Stock', 'Price', 'Total Value']
+            col_widths = [0.6 * inch, 2.2 * inch, 1.5 * inch, 0.8 * inch, 1 * inch, 1.2 * inch]
+            table_data = [headers]
+            for row in data:
+                table_data.append([
+                    str(row['id']), row['name'], row['category'], str(row['stock']),
+                    f"P {float(row['selling_price']):,.2f}", f"P {float(row['total_value']):,.2f}"
+                ])
+        else:  # Low Stock
+            headers = ['ID', 'Product Name', 'Category', 'Current Stock', 'Threshold']
+            col_widths = [0.8 * inch, 2.5 * inch, 2 * inch, 1 * inch, 1 * inch]
+            table_data = [headers]
+            for row in data:
+                table_data.append([
+                    str(row['id']), row['name'], row['category'],
+                    str(row['stock']), str(row['threshold'])
+                ])
+
+        self.elements.append(self._create_table(table_data, col_widths))
+        self.doc.build(self.elements)
+
+    def generate_audit_report(self, data, start_date, end_date):
+        self._add_header("System Audit Logs", start_date, end_date)
+
+        headers = ['Time', 'User', 'Action', 'Details']
+        table_data = [headers]
+        for row in data:
+            dt = row['timestamp'].strftime("%Y-%m-%d %H:%M") if hasattr(row['timestamp'], 'strftime') else str(
+                row['timestamp'])
+            # Wrap long text in details
+            details = Paragraph(row['details'], self.styles['BodyText'])
+            table_data.append([dt, row['user_name'], row['action'], details])
+
+        # Adjust widths for audit logs (more space for details)
+        self.elements.append(self._create_table(table_data, [1.5 * inch, 1.2 * inch, 1.5 * inch, 3 * inch]))
+        self.doc.build(self.elements)
 
 ==================================================
 FILE: utils\toast_notification.py
@@ -4506,9 +4778,15 @@ FILE: views\dashboard_window.ui
        </item>
        <item>
         <widget class="Line" name="line">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="maximumSize">
           <size>
-           <width>16777215</width>
+           <width>800</width>
            <height>1</height>
           </size>
          </property>
@@ -4767,7 +5045,7 @@ FILE: views\dashboard_window.ui
               <widget class="QLabel" name="lbl_badge_1">
                <property name="maximumSize">
                 <size>
-                 <width>140</width>
+                 <width>142</width>
                  <height>25</height>
                 </size>
                </property>
@@ -4775,7 +5053,7 @@ FILE: views\dashboard_window.ui
                 <string>background-color: #ECFDF5; color: #059669; border-radius: 6px; padding: 4px; font-weight: 600; font-size: 12px;</string>
                </property>
                <property name="text">
-                <string> +12% vs yesterday </string>
+                <string> +12% Value Added Tax</string>
                </property>
               </widget>
              </item>
@@ -4863,7 +5141,7 @@ FILE: views\dashboard_window.ui
               <widget class="QLabel" name="lbl_badge_2">
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>99</width>
                  <height>25</height>
                 </size>
                </property>
@@ -4965,7 +5243,7 @@ FILE: views\dashboard_window.ui
               <widget class="QLabel" name="lbl_badge_3">
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>100</width>
                  <height>25</height>
                 </size>
                </property>
@@ -8878,6 +9156,158 @@ FILE: views\reports_window.ui
  <connections/>
 </ui>
 
+
+==================================================
+FILE: views\report_dialog.ui
+==================================================
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ReportDialog</class>
+ <widget class="QDialog" name="ReportDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Generate Report</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Report Type</string>
+     </property>
+     <property name="font">
+      <font>
+       <bold>true</bold>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="reportTypeCombo">
+     <item>
+      <property name="text">
+       <string>Sales Report</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Inventory Valuation</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Low Stock Alert</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Audit Logs</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="dateGroup">
+     <property name="title">
+      <string>Date Range (For Sales/Audit)</string>
+     </property>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>From:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QDateEdit" name="startDateEdit">
+        <property name="calendarPopup">
+         <bool>true</bool>
+        </property>
+        <property name="displayFormat">
+         <string>yyyy-MM-dd</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>To:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDateEdit" name="endDateEdit">
+        <property name="calendarPopup">
+         <bool>true</bool>
+        </property>
+        <property name="displayFormat">
+         <string>yyyy-MM-dd</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancelBtn">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="exportBtn">
+       <property name="text">
+        <string>Export PDF</string>
+       </property>
+       <property name="styleSheet">
+        <string>background-color: #2980b9; color: white; font-weight: bold;</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
 
 ==================================================
 FILE: views\user_accounts_window.ui

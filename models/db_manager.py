@@ -291,3 +291,68 @@ class ManagerDB:
             finally:
                 conn.close()
         return items
+
+        # ... inside DatabaseManager class ...
+
+    def get_sales_report_data(self, start_date, end_date):
+        # Matches your actual table structure: id, sale_timestamp, cashier_name, total_amount
+        query = """
+                SELECT id as invoice_id, \
+                       sale_timestamp as date,
+            cashier_name as cashier,
+            items_count,
+            total_amount
+                FROM sales
+                WHERE DATE (sale_timestamp) BETWEEN %s \
+                  AND %s
+                ORDER BY sale_timestamp DESC \
+                """
+        cursor = self.connection.cursor(dictionary=True)
+        cursor.execute(query, (start_date, end_date))
+        return cursor.fetchall()
+
+    def get_inventory_valuation_data(self):
+        # Calculates potential revenue sitting in stock
+        query = """
+                SELECT id, \
+                       name, \
+                       category, \
+                       stock, \
+                       selling_price, \
+                       (stock * selling_price) as total_value
+                FROM inventory
+                ORDER BY category, name \
+                """
+        cursor = self.connection.cursor(dictionary=True)
+        cursor.execute(query)
+        return cursor.fetchall()
+
+    def get_low_stock_data(self):
+        # Filters only items below threshold
+        query = """
+                SELECT id, \
+                       name, \
+                       category, \
+                       stock, \
+                       threshold
+                FROM inventory
+                WHERE stock <= threshold
+                ORDER BY stock ASC \
+                """
+        cursor = self.connection.cursor(dictionary=True)
+        cursor.execute(query)
+        return cursor.fetchall()
+
+    def get_audit_log_data(self, start_date, end_date):
+        # Security trail
+        query = """
+                SELECT
+                    timestamp, user_name, action, details
+                FROM audit_logs
+                WHERE DATE (timestamp) BETWEEN %s \
+                  AND %s
+                ORDER BY timestamp DESC \
+                """
+        cursor = self.connection.cursor(dictionary=True)
+        cursor.execute(query, (start_date, end_date))
+        return cursor.fetchall()

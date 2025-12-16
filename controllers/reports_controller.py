@@ -3,8 +3,7 @@ import os
 
 from utils.ui_helper import set_icon, apply_hover_effect
 from models.db_manager import ManagerDB
-
-
+from controllers.report_dialog_controller import ReportDialogController
 
 class ReportsController(QtCore.QObject):
     def __init__(self, view, main_controller):
@@ -41,6 +40,19 @@ class ReportsController(QtCore.QObject):
         if hasattr(self.view, 'icon_stock'): set_icon(self.view.icon_stock, 'alert-triangle.svg', size=24)
         if hasattr(self.view, 'icon_exp'): set_icon(self.view.icon_exp, 'history.svg', size=24)
 
+        # [NEW] Connect the Generate Report Button
+        if hasattr(self.view, 'generateReportBtn'):
+            self.view.generateReportBtn.clicked.connect(self.open_report_dialog)
+
+    # [NEW] Method to open the dialog
+    def open_report_dialog(self):
+        try:
+            # Pass self.view as parent so the dialog centers on the reports window
+            dialog = ReportDialogController(parent=self.view)
+            dialog.exec()
+        except Exception as e:
+            print(f"Error opening report dialog: {e}")
+
     def refresh_data(self):
         #Financial(Manual Query)
         revenue = 0.0
@@ -67,7 +79,6 @@ class ReportsController(QtCore.QObject):
         # --- 2. Alerts (Using ManagerDB Method) ---
         try:
             # Assuming get_dashboard_stats exists in ManagerDB (db_manager.py)
-            # If not, this block might need a try/except or manual query fallback
             if hasattr(self.db, 'get_dashboard_stats'):
                 stats = self.db.get_dashboard_stats()
                 if hasattr(self.view, 'lbl_val_alert_stock'):
