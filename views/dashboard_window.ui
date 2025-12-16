@@ -347,7 +347,7 @@
                   <string>color: #64748B; font-size: 14px; font-weight: 600;</string>
                  </property>
                  <property name="text">
-                  <string>Total Revenue</string>
+                  <string>Total Revenue of Today</string>
                  </property>
                 </widget>
                </item>
