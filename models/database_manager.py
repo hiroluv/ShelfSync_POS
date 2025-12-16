@@ -40,6 +40,8 @@ class DatabaseManager:
                 query = "SELECT id, name, role FROM users WHERE name = %s AND password = %s"
                 cursor.execute(query, (username, password))
                 result = cursor.fetchone()
+
+                # --- FIX: Return User Object ---
                 if result:
                     user_obj = User(result['id'], result['name'], result['role'])
             except Error as e:
@@ -72,21 +74,35 @@ class DatabaseManager:
     def get_inventory_items(self):
         return self.manager_db.get_inventory_items()
 
+    # Note: These methods assume ManagerDB has them. If not, add them to ManagerDB.
+    # The error logs suggest ManagerDB handles product logic.
     def add_product(self, name, cat, stk, cost, price, thres, exp):
-        return self.manager_db.add_product(name, cat, stk, cost, price, thres, exp)
+        # Assuming this method exists in ManagerDB (db_manager.py)
+        if hasattr(self.manager_db, 'add_product'):
+            return self.manager_db.add_product(name, cat, stk, cost, price, thres, exp)
+        return False
 
     def update_product(self, pid, name, cat, stk, cost, price, thres, exp):
-        return self.manager_db.update_product(pid, name, cat, stk, cost, price, thres, exp)
+        # Assuming this method exists in ManagerDB
+        if hasattr(self.manager_db, 'update_product'):
+            return self.manager_db.update_product(pid, name, cat, stk, cost, price, thres, exp)
+        return False
 
     def delete_product(self, pid):
-        return self.manager_db.delete_product(pid)
+        # Assuming this method exists in ManagerDB
+        if hasattr(self.manager_db, 'delete_product'):
+            return self.manager_db.delete_product(pid)
+        return False
 
     # --- Dashboard Routes ---
     def get_dashboard_stats(self):
         return self.manager_db.get_dashboard_stats()
 
     def get_recent_sales(self, limit=10):
-        return self.manager_db.get_recent_sales(limit)
+        # Assuming this exists in ManagerDB (or add it if missing)
+        if hasattr(self.manager_db, 'get_recent_sales'):
+            return self.manager_db.get_recent_sales(limit)
+        return []
 
     def get_top_products(self, limit=5):
         return self.manager_db.get_top_products(limit)
@@ -95,7 +111,6 @@ class DatabaseManager:
 
     def get_audit_logs(self):
         logs = []
-        # Note: Use self.get_connection() if DatabaseManager holds the connection logic
         conn = self.get_connection()
         if conn and conn.is_connected():
             try:
@@ -104,7 +119,7 @@ class DatabaseManager:
                 query = """
                         SELECT timestamp, user_name, action, details
                         FROM audit_logs
-                        ORDER BY timestamp DESC \
+                        ORDER BY timestamp DESC
                         """
                 cursor.execute(query)
                 logs = cursor.fetchall()

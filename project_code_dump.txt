@@ -28,7 +28,6 @@ ShelfSync_POS/
         __init__.py
     Reports/
         All_Reports the looooooungg wayy.pdf
-        All_Reports_2025-12-17.pdf
     utils/
         pdf_generator.py
         toast_notification.py
@@ -97,7 +96,8 @@ class AppOrchestrator:
 
         try:
             if user.role == "Manager":
-                self.open_manager_window()
+                # --- [FIX] Pass user to open_manager_window ---
+                self.open_manager_window(user)
             elif user.role == "Cashier":
                 self.open_cashier_window(user)
 
@@ -108,9 +108,9 @@ class AppOrchestrator:
             print("CRITICAL ERROR LAUNCHING WINDOW:")
             traceback.print_exc()
 
-    def open_manager_window(self):
-        # PASS THE SHARED DB INSTANCE
-        self.main_window = MainController(self.db)
+    def open_manager_window(self, user):
+        # --- [FIX] Pass the user object to MainController ---
+        self.main_window = MainController(self.db, user_data=user)
         self.main_window.logout_request.connect(self.on_logout)
         self.main_window.show()
 
@@ -1259,6 +1259,18 @@ class InventoryController:
         if hasattr(button, 'active_style'):
             button.setStyleSheet(button.active_style)
 
+    # --- [NEW] Helper to get the Real User Name ---
+    def get_current_username(self):
+        """Safely retrieves the name of the currently logged-in user."""
+        if not hasattr(self.main_controller, 'user') or not self.main_controller.user:
+            return "System Admin"  # Fallback
+
+        # Handle if user is a dictionary or an object
+        user_data = self.main_controller.user
+        if isinstance(user_data, dict):
+            return user_data.get('name', 'Unknown User')
+        return getattr(user_data, 'name', 'Unknown User')
+
     def refresh_data(self, filter_type="all"):
 
         if not hasattr(self.view, 'layout_inventory_list'):
@@ -1298,7 +1310,7 @@ class InventoryController:
                 # Set Data
                 if hasattr(row_widget, 'lbl_name'): row_widget.lbl_name.setText(product.name)
                 if hasattr(row_widget, 'lbl_category'): row_widget.lbl_category.setText(product.category)
-                if hasattr(row_widget, 'lbl_stock'):row_widget.lbl_stock.setText(str(product.stock))
+                if hasattr(row_widget, 'lbl_stock'): row_widget.lbl_stock.setText(str(product.stock))
                 if hasattr(row_widget, 'lbl_price'): row_widget.lbl_price.setText(f"₱{product.selling_price:,.2f}")
 
                 # Status Badge
@@ -1316,10 +1328,10 @@ class InventoryController:
                         row_widget.lbl_status.setStyleSheet(
                             "background-color: #ECFDF5; color: #059669; border-radius: 12px; font-weight: bold;")
 
-                #Edit Button
+                # Edit Button - Pass product to open_edit_dialog
                 if hasattr(row_widget, 'btn_edit'):
                     row_widget.btn_edit.clicked.connect(lambda _, p=product: self.open_edit_dialog(p))
-                spacer_index = layout.count() - 1   # Always insert at (count() - 1) to keep the spacer at the bottom
+                spacer_index = layout.count() - 1  # Always insert at (count() - 1) to keep the spacer at the bottom
                 layout.insertWidget(spacer_index, row_widget)
 
             except Exception as e:
@@ -1348,12 +1360,11 @@ class InventoryController:
             overlay = Overlay(self.main_controller)
             overlay.show()
 
-            #USER CHECK
-            if hasattr(self.main_controller, 'user') and self.main_controller.user:
-                current_user = self.main_controller.user.name
-            else:
-                current_user = "System Admin"
+            # --- [FIX] Get Real User Name ---
+            current_user = self.get_current_username()
+            # --------------------------------
 
+            # Pass the REAL user name to the edit dialog
             dialog = EditProductDialogController(self.main_controller, product, current_user)
             dialog.setModal(True)
             if dialog.exec():
@@ -1645,6 +1656,21 @@ class MainController(QMainWindow):
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.icon_folder_normal = os.path.join(base_path, 'assets', 'side_panel_icons')
         self.icon_folder_active = os.path.join(self.icon_folder_normal, 'active')
+
+        # --- [NEW] Load Logo Image ---
+        if hasattr(self, 'logo_image'):
+            logo_path = os.path.join(base_path, 'assets', 'logo.png')
+            if os.path.exists(logo_path):
+                pixmap = QtGui.QPixmap(logo_path)
+                scaled_pixmap = pixmap.scaled(
+                    32, 32,
+                    QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                    QtCore.Qt.TransformationMode.SmoothTransformation
+                )
+                self.logo_image.setPixmap(scaled_pixmap)
+            else:
+                print(f"Warning: Logo file not found at {logo_path}")
+        # -----------------------------
 
         self.sidebar_buttons = []
         if hasattr(self, 'btn_nav_dashboard'): self.sidebar_buttons.append((self.btn_nav_dashboard, "dashboard.svg"))
@@ -2444,6 +2470,8 @@ class DatabaseManager:
                 query = "SELECT id, name, role FROM users WHERE name = %s AND password = %s"
                 cursor.execute(query, (username, password))
                 result = cursor.fetchone()
+
+                # --- FIX: Return User Object ---
                 if result:
                     user_obj = User(result['id'], result['name'], result['role'])
             except Error as e:
@@ -2476,21 +2504,35 @@ class DatabaseManager:
     def get_inventory_items(self):
         return self.manager_db.get_inventory_items()
 
+    # Note: These methods assume ManagerDB has them. If not, add them to ManagerDB.
+    # The error logs suggest ManagerDB handles product logic.
     def add_product(self, name, cat, stk, cost, price, thres, exp):
-        return self.manager_db.add_product(name, cat, stk, cost, price, thres, exp)
+        # Assuming this method exists in ManagerDB (db_manager.py)
+        if hasattr(self.manager_db, 'add_product'):
+            return self.manager_db.add_product(name, cat, stk, cost, price, thres, exp)
+        return False
 
     def update_product(self, pid, name, cat, stk, cost, price, thres, exp):
-        return self.manager_db.update_product(pid, name, cat, stk, cost, price, thres, exp)
+        # Assuming this method exists in ManagerDB
+        if hasattr(self.manager_db, 'update_product'):
+            return self.manager_db.update_product(pid, name, cat, stk, cost, price, thres, exp)
+        return False
 
     def delete_product(self, pid):
-        return self.manager_db.delete_product(pid)
+        # Assuming this method exists in ManagerDB
+        if hasattr(self.manager_db, 'delete_product'):
+            return self.manager_db.delete_product(pid)
+        return False
 
     # --- Dashboard Routes ---
     def get_dashboard_stats(self):
         return self.manager_db.get_dashboard_stats()
 
     def get_recent_sales(self, limit=10):
-        return self.manager_db.get_recent_sales(limit)
+        # Assuming this exists in ManagerDB (or add it if missing)
+        if hasattr(self.manager_db, 'get_recent_sales'):
+            return self.manager_db.get_recent_sales(limit)
+        return []
 
     def get_top_products(self, limit=5):
         return self.manager_db.get_top_products(limit)
@@ -2499,7 +2541,6 @@ class DatabaseManager:
 
     def get_audit_logs(self):
         logs = []
-        # Note: Use self.get_connection() if DatabaseManager holds the connection logic
         conn = self.get_connection()
         if conn and conn.is_connected():
             try:
@@ -2508,7 +2549,7 @@ class DatabaseManager:
                 query = """
                         SELECT timestamp, user_name, action, details
                         FROM audit_logs
-                        ORDER BY timestamp DESC \
+                        ORDER BY timestamp DESC
                         """
                 cursor.execute(query)
                 logs = cursor.fetchall()
@@ -4982,34 +5023,72 @@ FILE: views\dashboard_window.ui
         <number>30</number>
        </property>
        <item>
-        <widget class="QLabel" name="label_logo">
-         <property name="styleSheet">
-          <string notr="true">font-size: 24px; font-weight: 800; margin-bottom: 20px;</string>
+        <layout class="QHBoxLayout" name="layout_header_logo">
+         <property name="spacing">
+          <number>12</number>
          </property>
-         <property name="text">
-          <string>&lt;span style=&quot;color: #00BCD4;&quot;&gt;Shelf&lt;/span&gt;&lt;span style=&quot;color: #FFFFFF;&quot;&gt;Sync&lt;/span&gt;
-</string>
+         <property name="bottomMargin">
+          <number>20</number>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Policy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>10</height>
-          </size>
-         </property>
-        </spacer>
+         <item>
+          <spacer name="spacer_logo_left">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="logo_image">
+           <property name="minimumSize">
+            <size>
+             <width>35</width>
+             <height>35</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>35</width>
+             <height>35</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_logo">
+           <property name="styleSheet">
+            <string notr="true">font-size: 24px; font-weight: 800;</string>
+           </property>
+           <property name="text">
+            <string>&lt;span style=&quot;color: #00BCD4;&quot;&gt;Shelf&lt;/span&gt;&lt;span style=&quot;color: #FFFFFF;&quot;&gt;Sync&lt;/span&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="spacer_logo_right">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="Line" name="line">

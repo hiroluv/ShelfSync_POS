@@ -30,7 +30,8 @@ class AppOrchestrator:
 
         try:
             if user.role == "Manager":
-                self.open_manager_window()
+                # --- [FIX] Pass user to open_manager_window ---
+                self.open_manager_window(user)
             elif user.role == "Cashier":
                 self.open_cashier_window(user)
 
@@ -41,9 +42,9 @@ class AppOrchestrator:
             print("CRITICAL ERROR LAUNCHING WINDOW:")
             traceback.print_exc()
 
-    def open_manager_window(self):
-        # PASS THE SHARED DB INSTANCE
-        self.main_window = MainController(self.db)
+    def open_manager_window(self, user):
+        # --- [FIX] Pass the user object to MainController ---
+        self.main_window = MainController(self.db, user_data=user)
         self.main_window.logout_request.connect(self.on_logout)
         self.main_window.show()
 

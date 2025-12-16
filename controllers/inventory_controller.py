@@ -104,6 +104,18 @@ class InventoryController:
         if hasattr(button, 'active_style'):
             button.setStyleSheet(button.active_style)
 
+    # --- [NEW] Helper to get the Real User Name ---
+    def get_current_username(self):
+        """Safely retrieves the name of the currently logged-in user."""
+        if not hasattr(self.main_controller, 'user') or not self.main_controller.user:
+            return "System Admin"  # Fallback
+
+        # Handle if user is a dictionary or an object
+        user_data = self.main_controller.user
+        if isinstance(user_data, dict):
+            return user_data.get('name', 'Unknown User')
+        return getattr(user_data, 'name', 'Unknown User')
+
     def refresh_data(self, filter_type="all"):
 
         if not hasattr(self.view, 'layout_inventory_list'):
@@ -143,7 +155,7 @@ class InventoryController:
                 # Set Data
                 if hasattr(row_widget, 'lbl_name'): row_widget.lbl_name.setText(product.name)
                 if hasattr(row_widget, 'lbl_category'): row_widget.lbl_category.setText(product.category)
-                if hasattr(row_widget, 'lbl_stock'):row_widget.lbl_stock.setText(str(product.stock))
+                if hasattr(row_widget, 'lbl_stock'): row_widget.lbl_stock.setText(str(product.stock))
                 if hasattr(row_widget, 'lbl_price'): row_widget.lbl_price.setText(f"₱{product.selling_price:,.2f}")
 
                 # Status Badge
@@ -161,10 +173,10 @@ class InventoryController:
                         row_widget.lbl_status.setStyleSheet(
                             "background-color: #ECFDF5; color: #059669; border-radius: 12px; font-weight: bold;")
 
-                #Edit Button
+                # Edit Button - Pass product to open_edit_dialog
                 if hasattr(row_widget, 'btn_edit'):
                     row_widget.btn_edit.clicked.connect(lambda _, p=product: self.open_edit_dialog(p))
-                spacer_index = layout.count() - 1   # Always insert at (count() - 1) to keep the spacer at the bottom
+                spacer_index = layout.count() - 1  # Always insert at (count() - 1) to keep the spacer at the bottom
                 layout.insertWidget(spacer_index, row_widget)
 
             except Exception as e:
@@ -193,12 +205,11 @@ class InventoryController:
             overlay = Overlay(self.main_controller)
             overlay.show()
 
-            #USER CHECK
-            if hasattr(self.main_controller, 'user') and self.main_controller.user:
-                current_user = self.main_controller.user.name
-            else:
-                current_user = "System Admin"
+            # --- [FIX] Get Real User Name ---
+            current_user = self.get_current_username()
+            # --------------------------------
 
+            # Pass the REAL user name to the edit dialog
             dialog = EditProductDialogController(self.main_controller, product, current_user)
             dialog.setModal(True)
             if dialog.exec():
