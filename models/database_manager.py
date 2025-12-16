@@ -3,9 +3,6 @@ from mysql.connector import Error
 
 # Import Entity for Auth
 from models.entities import User
-
-
-# Import the new modular DBs
 from models.db_cashier import CashierDB
 from models.db_manager import ManagerDB
 

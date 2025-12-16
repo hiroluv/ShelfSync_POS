@@ -1,16 +1,14 @@
 from PyQt6.QtWidgets import QMainWindow, QLineEdit
-from PyQt6.QtGui import QAction, QIcon
-from PyQt6.QtCore import pyqtSignal
-from PyQt6 import uic
+from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor  # <--- Added painting imports
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent  # <--- Added Qt, QEvent
+from PyQt6 import uic, QtCore
 import os
-
 
 from controllers.product_grid_controller import ProductGrid_Controller
 from controllers.cart_controller import Cart_Controller
 
 
 class CashierController(QMainWindow):
-
     logout_request = pyqtSignal()
 
     def __init__(self, user, main_app):
@@ -48,7 +46,7 @@ class CashierController(QMainWindow):
         """Sets up ang svg icons"""
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        #Search Icon
+        # Search Icon
         if hasattr(self, 'input_search'):
             search_icon_path = os.path.join(base_path, 'assets', 'icons', 'search.svg')
             if os.path.exists(search_icon_path):
@@ -56,7 +54,7 @@ class CashierController(QMainWindow):
                 search_action.setIcon(QIcon(search_icon_path))
                 self.input_search.addAction(search_action, QLineEdit.ActionPosition.LeadingPosition)
 
-        #Cart Icon
+        # Cart Icon
         if hasattr(self, 'lbl_cart_title'):
             cart_icon_path = os.path.join(base_path, 'assets', 'icons', 'cart.svg')
             cart_icon_path = cart_icon_path.replace('\\', '/')
@@ -67,10 +65,77 @@ class CashierController(QMainWindow):
                     f'<html><head/><body><p><img src="{cart_icon_path}" width="20" height="20"/>&nbsp;&nbsp;{current_text}</p></body></html>'
                 )
 
+        # --- LOGOUT BUTTON (ADDED THIS) ---
+        # 1. Find the button (checks for 'btn_logout' or 'btn_exit')
+        btn_logout = getattr(self, 'btn_logout', getattr(self, 'btn_exit', None))
+
+        if btn_logout:
+            logout_path = os.path.join(base_path, 'assets', 'side_panel_icons', 'active', 'log-out.svg')
+
+            if os.path.exists(logout_path):
+                # 2. Configure it to change color (Grey -> Red) on hover
+                self.setup_text_icon_button(
+                    btn_logout,
+                    logout_path,
+                    normal_color="#64748B",  # Slate Grey
+                    hover_color="#EF4444"  # Red
+                )
+
+    def setup_text_icon_button(self, btn, icon_path, normal_color, hover_color):
+        """
+        Helper: Configures a button to have NO background, but changes Text and Icon color on hover.
+        """
+
+        # A. Paint Icons for both states (Normal & Hover)
+        def paint_icon(path, color_hex):
+            original = QPixmap(path)
+            painted = QPixmap(original.size())
+            painted.fill(Qt.GlobalColor.transparent)
+            painter = QPainter(painted)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.drawPixmap(0, 0, original)
+            # Paint the opaque pixels with the new color
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+            painter.fillRect(painted.rect(), QColor(color_hex))
+            painter.end()
+            return QIcon(painted)
+
+        # B. Store the colored icons in the button
+        btn.icon_normal = paint_icon(icon_path, normal_color)
+        btn.icon_hover = paint_icon(icon_path, hover_color)
+
+        # C. Set Initial State
+        btn.setIcon(btn.icon_normal)
+        btn.setIconSize(QtCore.QSize(20, 20))
+        btn.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        btn.installEventFilter(self)
+
+        # D. Set Stylesheet (Text Color Change Only)
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                text-align: left; 
+                padding: 12px 20px; 
+                border: none;
+                background-color: transparent;
+                color: {normal_color}; 
+                font-size: 14px; 
+                border-radius: 10px; 
+                margin: 4px 10px; 
+                font-weight: bold;
+            }}
+            QPushButton:hover {{ 
+                color: {hover_color}; 
+                background-color: transparent; 
+            }}
+            QPushButton:pressed {{ 
+                color: #DC2626; 
+            }}
+        """)
+
     def setup_connections(self):
         """Connects slots."""
 
-        #Product Grid -> Add to Cart
+        # Product Grid -> Add to Cart
         if hasattr(self, 'grid_controller') and hasattr(self, 'cart_controller'):
             if hasattr(self.grid_controller, 'product_clicked'):
                 self.grid_controller.product_clicked.connect(self.handle_add_product)
@@ -91,6 +156,19 @@ class CashierController(QMainWindow):
             print("DEBUG: Exit button connected successfully.")
         else:
             print("WARNING: 'btn_exit' not found in UI. Please check the button name in Qt Designer.")
+
+    # --- EVENT FILTER (Handles Icon Swapping) ---
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.Type.Enter:
+            # Mouse Enter: Switch to Hover Icon (Red)
+            if hasattr(source, 'icon_hover'):
+                source.setIcon(source.icon_hover)
+        elif event.type() == QEvent.Type.Leave:
+            # Mouse Leave: Revert to Normal Icon (Grey)
+            if hasattr(source, 'icon_normal'):
+                source.setIcon(source.icon_normal)
+
+        return super().eventFilter(source, event)
 
     # --- ACTIONs cutieeee---
 

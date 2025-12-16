@@ -77,12 +77,67 @@
           <string notr="true">font-size: 24px; font-weight: 800; margin-bottom: 20px;</string>
          </property>
          <property name="text">
-          <string>ShelfSync</string>
+          <string>&lt;span style=&quot;color: #00BCD4;&quot;&gt;Shelf&lt;/span&gt;&lt;span style=&quot;color: #FFFFFF;&quot;&gt;Sync&lt;/span&gt;
+</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignmentFlag::AlignCenter</set>
          </property>
         </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Policy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>10</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>800</width>
+           <height>1</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background: #141E32;</string>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Policy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item>
         <widget class="QPushButton" name="btn_nav_dashboard">
@@ -315,7 +370,7 @@
               <widget class="QLabel" name="lbl_badge_1">
                <property name="maximumSize">
                 <size>
-                 <width>140</width>
+                 <width>142</width>
                  <height>25</height>
                 </size>
                </property>
@@ -323,7 +378,7 @@
                 <string>background-color: #ECFDF5; color: #059669; border-radius: 6px; padding: 4px; font-weight: 600; font-size: 12px;</string>
                </property>
                <property name="text">
-                <string> +12% vs yesterday </string>
+                <string> +12% Value Added Tax</string>
                </property>
               </widget>
              </item>
@@ -411,7 +466,7 @@
               <widget class="QLabel" name="lbl_badge_2">
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>99</width>
                  <height>25</height>
                 </size>
                </property>
@@ -513,7 +568,7 @@
               <widget class="QLabel" name="lbl_badge_3">
                <property name="maximumSize">
                 <size>
-                 <width>120</width>
+                 <width>100</width>
                  <height>25</height>
                 </size>
                </property>

@@ -63,7 +63,6 @@ import sys
 import os
 import traceback
 
-# Ensure the project root is in the system path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from PyQt6.QtWidgets import QApplication
@@ -660,18 +659,16 @@ class Cart_Controller:
 FILE: controllers\cashier_controller.py
 ==================================================
 from PyQt6.QtWidgets import QMainWindow, QLineEdit
-from PyQt6.QtGui import QAction, QIcon
-from PyQt6.QtCore import pyqtSignal
-from PyQt6 import uic
+from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor  # <--- Added painting imports
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent  # <--- Added Qt, QEvent
+from PyQt6 import uic, QtCore
 import os
-
 
 from controllers.product_grid_controller import ProductGrid_Controller
 from controllers.cart_controller import Cart_Controller
 
 
 class CashierController(QMainWindow):
-
     logout_request = pyqtSignal()
 
     def __init__(self, user, main_app):
@@ -709,7 +706,7 @@ class CashierController(QMainWindow):
         """Sets up ang svg icons"""
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        #Search Icon
+        # Search Icon
         if hasattr(self, 'input_search'):
             search_icon_path = os.path.join(base_path, 'assets', 'icons', 'search.svg')
             if os.path.exists(search_icon_path):
@@ -717,7 +714,7 @@ class CashierController(QMainWindow):
                 search_action.setIcon(QIcon(search_icon_path))
                 self.input_search.addAction(search_action, QLineEdit.ActionPosition.LeadingPosition)
 
-        #Cart Icon
+        # Cart Icon
         if hasattr(self, 'lbl_cart_title'):
             cart_icon_path = os.path.join(base_path, 'assets', 'icons', 'cart.svg')
             cart_icon_path = cart_icon_path.replace('\\', '/')
@@ -728,10 +725,77 @@ class CashierController(QMainWindow):
                     f'<html><head/><body><p><img src="{cart_icon_path}" width="20" height="20"/>&nbsp;&nbsp;{current_text}</p></body></html>'
                 )
 
+        # --- LOGOUT BUTTON (ADDED THIS) ---
+        # 1. Find the button (checks for 'btn_logout' or 'btn_exit')
+        btn_logout = getattr(self, 'btn_logout', getattr(self, 'btn_exit', None))
+
+        if btn_logout:
+            logout_path = os.path.join(base_path, 'assets', 'side_panel_icons', 'active', 'log-out.svg')
+
+            if os.path.exists(logout_path):
+                # 2. Configure it to change color (Grey -> Red) on hover
+                self.setup_text_icon_button(
+                    btn_logout,
+                    logout_path,
+                    normal_color="#64748B",  # Slate Grey
+                    hover_color="#EF4444"  # Red
+                )
+
+    def setup_text_icon_button(self, btn, icon_path, normal_color, hover_color):
+        """
+        Helper: Configures a button to have NO background, but changes Text and Icon color on hover.
+        """
+
+        # A. Paint Icons for both states (Normal & Hover)
+        def paint_icon(path, color_hex):
+            original = QPixmap(path)
+            painted = QPixmap(original.size())
+            painted.fill(Qt.GlobalColor.transparent)
+            painter = QPainter(painted)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.drawPixmap(0, 0, original)
+            # Paint the opaque pixels with the new color
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+            painter.fillRect(painted.rect(), QColor(color_hex))
+            painter.end()
+            return QIcon(painted)
+
+        # B. Store the colored icons in the button
+        btn.icon_normal = paint_icon(icon_path, normal_color)
+        btn.icon_hover = paint_icon(icon_path, hover_color)
+
+        # C. Set Initial State
+        btn.setIcon(btn.icon_normal)
+        btn.setIconSize(QtCore.QSize(20, 20))
+        btn.setAttribute(Qt.WidgetAttribute.WA_Hover)
+        btn.installEventFilter(self)
+
+        # D. Set Stylesheet (Text Color Change Only)
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                text-align: left; 
+                padding: 12px 20px; 
+                border: none;
+                background-color: transparent;
+                color: {normal_color}; 
+                font-size: 14px; 
+                border-radius: 10px; 
+                margin: 4px 10px; 
+                font-weight: bold;
+            }}
+            QPushButton:hover {{ 
+                color: {hover_color}; 
+                background-color: transparent; 
+            }}
+            QPushButton:pressed {{ 
+                color: #DC2626; 
+            }}
+        """)
+
     def setup_connections(self):
         """Connects slots."""
 
-        #Product Grid -> Add to Cart
+        # Product Grid -> Add to Cart
         if hasattr(self, 'grid_controller') and hasattr(self, 'cart_controller'):
             if hasattr(self.grid_controller, 'product_clicked'):
                 self.grid_controller.product_clicked.connect(self.handle_add_product)
@@ -752,6 +816,19 @@ class CashierController(QMainWindow):
             print("DEBUG: Exit button connected successfully.")
         else:
             print("WARNING: 'btn_exit' not found in UI. Please check the button name in Qt Designer.")
+
+    # --- EVENT FILTER (Handles Icon Swapping) ---
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.Type.Enter:
+            # Mouse Enter: Switch to Hover Icon (Red)
+            if hasattr(source, 'icon_hover'):
+                source.setIcon(source.icon_hover)
+        elif event.type() == QEvent.Type.Leave:
+            # Mouse Leave: Revert to Normal Icon (Grey)
+            if hasattr(source, 'icon_normal'):
+                source.setIcon(source.icon_normal)
+
+        return super().eventFilter(source, event)
 
     # --- ACTIONs cutieeee---
 
@@ -792,6 +869,7 @@ class CashierController(QMainWindow):
 FILE: controllers\dashboard_controller.py
 ==================================================
 from PyQt6 import uic, QtCore
+from PyQt6.QtCore import QTimer, QDateTime  # <--- Added these imports
 import os
 
 from utils.ui_helper import add_drop_shadow, set_icon, apply_hover_effect
@@ -804,11 +882,26 @@ class DashboardController(QtCore.QObject):
         self.main_controller = main_controller
         self.db = main_controller.db
 
+        # Default name
+        self.current_user_name = "Manager"
+
         self.setup_ui()
         self.refresh_data()
+        self.start_clock()  # <--- Start the clock immediately
 
-    # mga ao na design pu
     def setup_ui(self):
+        # --- 1. GET USER NAME ---
+        # We fetch this once during setup so we don't query it every second
+        if hasattr(self.main_controller, 'user'):
+            current_user = getattr(self.main_controller, 'user', None)
+            if current_user:
+                # Handle if user is an Object (user.name) or Dictionary (user['name'])
+                if hasattr(current_user, 'name'):
+                    self.current_user_name = current_user.name
+                elif isinstance(current_user, dict):
+                    self.current_user_name = current_user.get('name', 'Manager')
+
+        # --- 2. EXISTING UI EFFECTS ---
         # Apply Hover Effect (Floating + Shadow) for cards
         if hasattr(self.main_controller, 'card_revenue'):
             apply_hover_effect(self.main_controller.card_revenue)
@@ -828,6 +921,29 @@ class DashboardController(QtCore.QObject):
             set_icon(self.main_controller.lbl_icon_2, 'alert-triangle.svg', size=24)  # Low Stock
         if hasattr(self.main_controller, 'lbl_icon_3'):
             set_icon(self.main_controller.lbl_icon_3, 'history.svg', size=24)  # Expiring
+
+    # --- NEW CLOCK FUNCTIONS ---
+    def start_clock(self):
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_dashboard_time)
+        self.timer.start(1000)  # Update every 1 second
+        self.update_dashboard_time()  # Run immediately
+
+    def update_dashboard_time(self):
+        # Get current time
+        current_time = QDateTime.currentDateTime()
+
+        # Format: Month Day, Year | Hour:Minute:Second AM/PM
+        # Example: December 17, 2025 | 09:30:45 AM
+        date_display = current_time.toString("MMMM d, yyyy")
+        time_display = current_time.toString("hh:mm:ss AP")
+
+        # Combine Welcome Message + Date/Time
+        final_text = f"Welcome back, {self.current_user_name}\n{date_display} | {time_display}"
+
+        # Update the label
+        if hasattr(self.main_controller, 'label_dash_sub'):
+            self.main_controller.label_dash_sub.setText(final_text)
 
     def refresh_data(self):
         stats = self.db.get_dashboard_stats()
@@ -868,32 +984,29 @@ class DashboardController(QtCore.QObject):
             try:
                 widget = uic.loadUi(ui_path)
 
-                # --- FIX: USE EXACT DATABASE COLUMN NAMES ---
-
-                # QUANTITY (Column: items_count)
-                # We disregard product name as requested, just showing item count
+                # 1. TOTAL ITEMS (Matches 'items_count' from DB)
                 if hasattr(widget, 'lbl_items'):
                     count = sale.get('items_count', 0)
                     widget.lbl_items.setText(f"{count} Items")
 
-                # TOTAL (Column: total_amount)
+                # 2. TOTAL AMOUNT (Matches 'total_amount' from DB)
                 if hasattr(widget, 'lbl_total'):
-                    # The DB column is 'total_amount', NOT 'price'
                     amount = float(sale.get('total_amount', 0))
                     widget.lbl_total.setText(f"₱{amount:,.2f}")
 
-                # CASHIER NAME (Column: cashier_name)
+                # 3. CASHIER NAME (Matches 'cashier_name' from DB)
                 if hasattr(widget, 'lbl_name'):
                     cashier = sale.get('cashier_name', 'N/A')
                     widget.lbl_name.setText(cashier)
 
-                # TIME (Column: sale_timestamp)
+                # 4. TIME
                 if hasattr(widget, 'lbl_time'):
                     time_val = sale.get('sale_timestamp')
                     if time_val:
                         widget.lbl_time.setText(time_val.strftime("%b %d, %I:%M %p"))
 
-                layout.insertWidget(0, widget)
+                # assert isinstance(widget, object)
+                layout.addWidget(widget)
 
             except Exception as e:
                 print(f"Error loading sale row: {e}")
@@ -1293,7 +1406,7 @@ class LoginController(QMainWindow):
 
     def setup_ui(self):
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        logo_path = os.path.join(base_path, 'assets', 'logo.png')
+        logo_path = os.path.join(base_path, 'assets', 'logo.svg')
 
         if os.path.exists(logo_path):
             pixmap = QPixmap(logo_path)
@@ -2009,7 +2122,6 @@ class ReportsController(QtCore.QObject):
 ==================================================
 FILE: controllers\users_controller.py
 ==================================================
-# controllers/users_controller.py
 from PyQt6 import QtWidgets, uic, QtCore
 import os
 
@@ -2038,10 +2150,9 @@ class UsersController:
             self.view.btn_add_user.clicked.connect(self.open_add_user_dialog)
 
     def refresh_data(self):
-        # Correct layout name from user_accounts_window.ui
         layout = self.view.layout_users_list
 
-        # Clear existing items
+        # Clear existing items (Keeping > 1 preserves the bottom spacer if you have one)
         while layout.count() > 1:
             child = layout.takeAt(0)
             if child.widget():
@@ -2065,19 +2176,20 @@ class UsersController:
             try:
                 row_widget = uic.loadUi(ui_path)
 
-                # Labels from your item_user.ui — exact names
-                row_widget.lbl_name.setText(user.name)
-                row_widget.lbl_role.setText(user.role)
+                # Set Labels
+                if hasattr(row_widget, 'lbl_name'):
+                    row_widget.lbl_name.setText(user.name)
+                if hasattr(row_widget, 'lbl_role'):
+                    row_widget.lbl_role.setText(user.role)
 
-                # No lbl_initial — use the circle frame or skip
-                # If you have a circle QLabel for initial, name it lbl_initial in UI
-                # For now, we skip it since it's not in your current UI
-
-                # Remove button
+                # Connect Delete Button
+                # FIX: Capture 'uid' in the lambda so it doesn't default to the last loop item
                 btn_remove = row_widget.findChild(QtWidgets.QPushButton, 'btn_remove')
                 if btn_remove:
-                    btn_remove.clicked.connect(lambda checked, uid=user.id: self.remove_user(uid))
+                    btn_remove.clicked.connect(lambda checked, uid=user.id: self.delete_user_action(uid))
 
+                # Insert at top (index 0) to show new users first?
+                # Or use layout.addWidget(row_widget) if you want ID order.
                 layout.insertWidget(0, row_widget)
 
             except Exception as e:
@@ -2127,20 +2239,52 @@ class UsersController:
             print(f"Error in add user dialog: {e}")
             show_toast(self.main_controller, "Failed to open Add User dialog.", type="error")
 
-    def remove_user(self, user_id):
-        reply = QtWidgets.QMessageBox.question(
-            self.view, "Confirm Remove",
-            "Are you sure you want to remove this user?",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No
-        )
+    def delete_user_action(self, user_id):
+        # 1. Create the dialog instance manually (instead of using static .question)
+        msg_box = QtWidgets.QMessageBox(self.view)
+        msg_box.setWindowTitle("Confirm Delete")
+        msg_box.setText("Are you sure you want to delete this user?")
+        msg_box.setIcon(QtWidgets.QMessageBox.Icon.Question)
+        msg_box.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+
+        # 2. Apply a specific style to fix the visibility issue
+        # We force a dark background and ensure buttons are visible
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: #1F2937;  /* Dark Grey Background */
+            }
+            QLabel {
+                color: white;               /* White Text */
+                font-size: 14px;
+                background: none;
+            }
+            QPushButton {
+                background-color: #374151;  /* Button Color */
+                color: white;
+                border: 1px solid #4B5563;
+                border-radius: 4px;
+                padding: 6px 12px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #4B5563;  /* Lighter on Hover */
+            }
+        """)
+
+        # 3. Show the dialog
+        overlay = Overlay(self.main_controller)
+        overlay.show()
+        reply = msg_box.exec()
+        overlay.close()
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            success = self.db.remove_user(user_id)
+            success = self.db.delete_user(user_id)
+
             if success:
-                show_toast(self.main_controller, "User removed successfully!", type="success")
+                show_toast(self.main_controller, "User deleted successfully!", type="success")
                 self.refresh_data()
             else:
-                show_toast(self.main_controller, "Cannot remove last Manager.", type="error")
+                show_toast(self.main_controller, "Cannot delete the last Manager account.", type="error")
 
 ==================================================
 FILE: controllers\__init__.py
@@ -2155,9 +2299,6 @@ from mysql.connector import Error
 
 # Import Entity for Auth
 from models.entities import User
-
-
-# Import the new modular DBs
 from models.db_cashier import CashierDB
 from models.db_manager import ManagerDB
 
@@ -2221,8 +2362,8 @@ class DatabaseManager:
     def add_user(self, name, pwd, role):
         return self.manager_db.add_user(name, pwd, role)
 
-    def delete_user(self, uid):
-        return self.manager_db.delete_user(uid)
+    def delete_user(self, user_id):
+        return self.manager_db.delete_user(user_id)
 
     def get_inventory_items(self):
         return self.manager_db.get_inventory_items()
@@ -2416,6 +2557,20 @@ class ManagerDB:
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor()
+
+                # --- SAFETY CHECK: Prevent deleting the last Manager ---
+                cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+                row = cursor.fetchone()
+
+                if row and row[0] == 'Manager':
+                    cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'Manager'")
+                    manager_count = cursor.fetchone()[0]
+
+                    if manager_count <= 1:
+                        print("Error: Cannot delete the last Manager account.")
+                        return False
+                # -------------------------------------------------------
+
                 cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
                 conn.commit()
                 return True
@@ -2600,8 +2755,8 @@ class ManagerDB:
 
     def get_recent_sales(self, limit=10):
         """
-        Fetches individual ITEMS sold recently by joining sales, sale_items, and inventory tables.
-        This provides the product name, individual price, and quantity for the dashboard list.
+        Fetches RECENT TRANSACTIONS from the sales table.
+        Returns: total_amount, items_count, cashier_name, sale_timestamp
         """
         sales = []
         conn = self.main_db.get_connection()
@@ -2609,19 +2764,17 @@ class ManagerDB:
             try:
                 cursor = conn.cursor(dictionary=True)
 
-                # UPDATED QUERY: Joins tables to get specific item details instead of generic totals
+                # FIX: Select directly from 'sales' table to get the Receipt Summary
                 query = """
-                        SELECT i.name as product_name, \
-                               si.price, \
-                               si.quantity, \
-                               s.cashier_name, \
-                               s.sale_timestamp
-                        FROM sale_items si
-                                 JOIN sales s ON si.sale_id = s.id
-                                 JOIN inventory i ON si.product_id = i.id
-                        ORDER BY s.sale_timestamp DESC
-                            LIMIT %s
-                        """
+                    SELECT 
+                        total_amount, 
+                        items_count, 
+                        cashier_name, 
+                        sale_timestamp 
+                    FROM sales 
+                    ORDER BY sale_timestamp DESC 
+                    LIMIT %s
+                """
                 cursor.execute(query, (limit,))
                 sales = cursor.fetchall()
             except Error as e:
@@ -3681,7 +3834,7 @@ FILE: views\cashier_window.ui
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1084</width>
+    <width>1139</width>
     <height>579</height>
    </rect>
   </property>
@@ -3752,10 +3905,10 @@ FILE: views\cashier_window.ui
           <item>
            <widget class="QLabel" name="lbl_logo">
             <property name="styleSheet">
-             <string>font-size: 24px; font-weight: 800; color: #0F172A;</string>
+             <string notr="true">font-size: 24px; font-weight: 800; color: #0F172A;</string>
             </property>
             <property name="text">
-             <string>ShelfSync POS</string>
+             <string>&lt;span style=&quot;color: #0F1428&quot;&gt;Shelf&lt;/span&gt;&lt;span style=&quot;color: #05B4D2;&quot;&gt;Sync&lt;/span&gt;</string>
             </property>
            </widget>
           </item>
@@ -3795,6 +3948,9 @@ FILE: views\cashier_window.ui
                 background-color: white;
               }
              </string>
+            </property>
+            <property name="text">
+             <string/>
             </property>
             <property name="placeholderText">
              <string>Scan item or search product...</string>
@@ -3870,7 +4026,7 @@ FILE: views\cashier_window.ui
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>684</width>
+            <width>739</width>
             <height>499</height>
            </rect>
           </property>
@@ -4253,8 +4409,8 @@ FILE: views\dashboard_window.ui
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1076</width>
-    <height>632</height>
+    <width>1157</width>
+    <height>663</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -4321,15 +4477,64 @@ FILE: views\dashboard_window.ui
        <item>
         <widget class="QLabel" name="label_logo">
          <property name="styleSheet">
-          <string notr="true">font-size: 24px; font-weight: 800; color: #00BCD4; margin-bottom: 20px;</string>
+          <string notr="true">font-size: 24px; font-weight: 800; margin-bottom: 20px;</string>
          </property>
          <property name="text">
-          <string>ShelfSync</string>
+          <string>&lt;span style=&quot;color: #00BCD4;&quot;&gt;Shelf&lt;/span&gt;&lt;span style=&quot;color: #FFFFFF;&quot;&gt;Sync&lt;/span&gt;
+</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignmentFlag::AlignCenter</set>
          </property>
         </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Policy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>10</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>1</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background: #141E32;</string>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Policy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
        </item>
        <item>
         <widget class="QPushButton" name="btn_nav_dashboard">
@@ -4462,11 +4667,17 @@ FILE: views\dashboard_window.ui
         </item>
         <item>
          <widget class="QLabel" name="label_dash_sub">
+          <property name="maximumSize">
+           <size>
+            <width>300</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="styleSheet">
-           <string notr="true">font-size: 16px; color: #64748B; /* Slate-500 */ margin-bottom: 20px;</string>
+           <string notr="true">font-size: 14px; color: #64748B; /* text-slate-600 */ margin-bottom: 20px;</string>
           </property>
           <property name="text">
-           <string>Welcome back, Manager.</string>
+           <string>Welcome back,</string>
           </property>
          </widget>
         </item>
@@ -4779,6 +4990,12 @@ FILE: views\dashboard_window.ui
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>270</height>
+           </size>
+          </property>
           <property name="styleSheet">
            <string notr="true">QFrame#frame_table { background-color: white; border-radius: 16px; border: 1px solid #E2E8F0; margin: 5px; }</string>
           </property>
@@ -4819,11 +5036,11 @@ FILE: views\dashboard_window.ui
                 <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Policy::Maximum</enum>
+                <enum>QSizePolicy::Policy::Fixed</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>24</width>
+                 <width>40</width>
                  <height>20</height>
                 </size>
                </property>
@@ -4844,9 +5061,12 @@ FILE: views\dashboard_window.ui
                <property name="orientation">
                 <enum>Qt::Orientation::Horizontal</enum>
                </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Policy::Fixed</enum>
+               </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>40</width>
+                 <width>50</width>
                  <height>20</height>
                 </size>
                </property>
@@ -4870,9 +5090,12 @@ FILE: views\dashboard_window.ui
                <property name="orientation">
                 <enum>Qt::Orientation::Horizontal</enum>
                </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Policy::Fixed</enum>
+               </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>40</width>
+                 <width>122</width>
                  <height>20</height>
                 </size>
                </property>
@@ -4884,7 +5107,7 @@ FILE: views\dashboard_window.ui
                 <string>color: #94A3B8; font-weight: 700; font-size: 12px;</string>
                </property>
                <property name="text">
-                <string>TOTAL                                                      USER</string>
+                <string>TOTAL                                                                     USER</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignmentFlag::AlignRight</set>
@@ -4897,11 +5120,11 @@ FILE: views\dashboard_window.ui
                 <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Policy::Maximum</enum>
+                <enum>QSizePolicy::Policy::Fixed</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
-                 <width>27</width>
+                 <width>100</width>
                  <height>0</height>
                 </size>
                </property>
@@ -4933,8 +5156,8 @@ FILE: views\dashboard_window.ui
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>670</width>
-                <height>80</height>
+                <width>751</width>
+                <height>113</height>
                </rect>
               </property>
               <layout class="QVBoxLayout" name="layout_sales_list">
@@ -6848,7 +7071,7 @@ FILE: views\item_sale.ui
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>700</width>
+    <width>1006</width>
     <height>60</height>
    </rect>
   </property>
@@ -6944,11 +7167,11 @@ FILE: views\item_sale.ui
          <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeType">
-         <enum>QSizePolicy::Policy::Expanding</enum>
+         <enum>QSizePolicy::Policy::Fixed</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>40</width>
+          <width>150</width>
           <height>20</height>
          </size>
         </property>
@@ -6964,7 +7187,7 @@ FILE: views\item_sale.ui
         </property>
         <property name="maximumSize">
          <size>
-          <width>16777215</width>
+          <width>50</width>
           <height>30</height>
          </size>
         </property>
@@ -6998,11 +7221,11 @@ FILE: views\item_sale.ui
          <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeType">
-         <enum>QSizePolicy::Policy::Expanding</enum>
+         <enum>QSizePolicy::Policy::Fixed</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>40</width>
+          <width>100</width>
           <height>20</height>
          </size>
         </property>
@@ -7019,7 +7242,7 @@ FILE: views\item_sale.ui
         <property name="maximumSize">
          <size>
           <width>100</width>
-          <height>16777215</height>
+          <height>100</height>
          </size>
         </property>
         <property name="styleSheet">
@@ -7038,9 +7261,12 @@ FILE: views\item_sale.ui
         <property name="orientation">
          <enum>Qt::Orientation::Horizontal</enum>
         </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Policy::Fixed</enum>
+        </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>40</width>
+          <width>150</width>
           <height>20</height>
          </size>
         </property>
@@ -7048,6 +7274,18 @@ FILE: views\item_sale.ui
       </item>
       <item>
        <widget class="QLabel" name="lbl_name">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">color: #475569; font-family: &quot;Consolas&quot;; font-size: 13px; border: none;</string>
         </property>
@@ -7329,7 +7567,7 @@ FILE: views\login_window.ui
     <x>0</x>
     <y>0</y>
     <width>1080</width>
-    <height>650</height>
+    <height>676</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -7340,12 +7578,21 @@ FILE: views\login_window.ui
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
-    <property name="spacing"><number>0</number></property>
-    <property name="leftMargin"><number>0</number></property>
-    <property name="topMargin"><number>0</number></property>
-    <property name="rightMargin"><number>0</number></property>
-    <property name="bottomMargin"><number>0</number></property>
-
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
     <item>
      <widget class="QFrame" name="frame_brand">
       <property name="styleSheet">
@@ -7358,71 +7605,151 @@ FILE: views\login_window.ui
        </string>
       </property>
       <layout class="QVBoxLayout" name="vbox_brand">
-       <property name="spacing"><number>20</number></property>
-       <item><spacer name="vspacer_top"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
-
+       <property name="spacing">
+        <number>20</number>
+       </property>
+       <item>
+        <spacer name="vspacer_top">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
        <item>
         <widget class="QLabel" name="lbl_logo_icon">
-         <property name="text"><string></string></property>
-         <property name="alignment"><set>Qt::AlignCenter</set></property>
-         <property name="styleSheet"><string>background: transparent;</string></property>
-         <property name="minimumSize"><size><width>200</width><height>200</height></size></property>
+         <property name="minimumSize">
+          <size>
+           <width>200</width>
+           <height>200</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string>background: transparent;</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QLabel" name="lbl_brand_title">
-         <property name="text"><string>ShelfSync</string></property>
-         <property name="alignment"><set>Qt::AlignCenter</set></property>
-         <property name="styleSheet"><string>font-size: 56px; font-weight: 800; letter-spacing: 2px; color: white;</string></property>
+         <property name="styleSheet">
+          <string>font-size: 56px; font-weight: 800; letter-spacing: 2px; color: white;</string>
+         </property>
+         <property name="text">
+          <string>&lt;span style=&quot;color: #FFFFF;&quot;&gt;Shelf&lt;/span&gt;&lt;span style=&quot;color: #148CAA;&quot;&gt;Sy&lt;/span&gt;&lt;span style=&quot;color: #11CDC8;&quot;&gt;nc&lt;/span&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QLabel" name="lbl_brand_sub">
-         <property name="text"><string>Smart Inventory &amp; POS System</string></property>
-         <property name="alignment"><set>Qt::AlignCenter</set></property>
-         <property name="styleSheet"><string>font-size: 20px; color: #94A3B8; font-weight: 400;</string></property>
+         <property name="styleSheet">
+          <string>font-size: 20px; color: #94A3B8; font-weight: 400;</string>
+         </property>
+         <property name="text">
+          <string>Smart Inventory &amp; POS System</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
         </widget>
        </item>
-
-       <item><spacer name="vspacer_bot"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
+       <item>
+        <spacer name="vspacer_bot">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
       </layout>
      </widget>
     </item>
-
     <item>
      <widget class="QFrame" name="frame_login">
-      <property name="minimumSize"><size><width>550</width><height>0</height></size></property>
-      <property name="maximumSize"><size><width>550</width><height>16777215</height></size></property>
+      <property name="minimumSize">
+       <size>
+        <width>550</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>550</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <property name="styleSheet">
        <string notr="true">
         QFrame#frame_login { background-color: white; }
        </string>
       </property>
       <layout class="QVBoxLayout" name="vbox_login">
-       <property name="spacing"><number>25</number></property>
-       <property name="leftMargin"><number>80</number></property>
-       <property name="rightMargin"><number>80</number></property>
-       <property name="topMargin"><number>60</number></property>
-       <property name="bottomMargin"><number>60</number></property>
-
-       <item><spacer name="s1"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
-
+       <property name="spacing">
+        <number>25</number>
+       </property>
+       <property name="leftMargin">
+        <number>80</number>
+       </property>
+       <property name="topMargin">
+        <number>60</number>
+       </property>
+       <property name="rightMargin">
+        <number>80</number>
+       </property>
+       <property name="bottomMargin">
+        <number>60</number>
+       </property>
+       <item>
+        <spacer name="s1">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
        <item>
         <widget class="QLabel" name="lbl_welcome">
-         <property name="text"><string>Welcome Back</string></property>
-         <property name="styleSheet"><string>font-size: 36px; font-weight: 800; color: #1E293B;</string></property>
+         <property name="styleSheet">
+          <string>font-size: 36px; font-weight: 800; color: #1E293B;</string>
+         </property>
+         <property name="text">
+          <string>Welcome Back</string>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QLabel" name="lbl_instruction">
-         <property name="text"><string>Please enter your details to sign in.</string></property>
-         <property name="styleSheet"><string>color: #64748B; font-size: 16px;</string></property>
+         <property name="styleSheet">
+          <string>color: #64748B; font-size: 16px;</string>
+         </property>
+         <property name="text">
+          <string>Please enter your details to sign in.</string>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QFrame" name="frame_role_toggle">
          <property name="styleSheet">
@@ -7435,16 +7762,23 @@ FILE: views\login_window.ui
           </string>
          </property>
          <layout class="QHBoxLayout" name="hbox_role">
-          <property name="margin"><number>0</number></property>
-          <property name="spacing"><number>0</number></property>
-
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="margin" stdset="0">
+           <number>0</number>
+          </property>
           <item>
            <widget class="QPushButton" name="btn_role_cashier">
-            <property name="text"><string>Cashier</string></property>
-            <property name="checkable"><bool>true</bool></property>
-            <property name="checked"><bool>true</bool></property>
-            <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
-            <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
             <property name="styleSheet">
              <string notr="true">
               QPushButton {
@@ -7457,14 +7791,28 @@ FILE: views\login_window.ui
               }
              </string>
             </property>
+            <property name="text">
+             <string>Cashier</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="btn_role_manager">
-            <property name="text"><string>Manager</string></property>
-            <property name="checkable"><bool>true</bool></property>
-            <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
-            <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
             <property name="styleSheet">
              <string notr="true">
               QPushButton {
@@ -7476,21 +7824,31 @@ FILE: views\login_window.ui
                 border: 1px solid #E2E8F0;
               }
              </string>
+            </property>
+            <property name="text">
+             <string>Manager</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
          </layout>
         </widget>
        </item>
-
        <item>
         <layout class="QVBoxLayout" name="vbox_inputs">
-         <property name="spacing"><number>16</number></property>
-
+         <property name="spacing">
+          <number>16</number>
+         </property>
          <item>
           <widget class="QLineEdit" name="input_user">
-           <property name="placeholderText"><string>Username</string></property>
-           <property name="minimumSize"><size><width>0</width><height>55</height></size></property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>55</height>
+            </size>
+           </property>
            <property name="styleSheet">
             <string notr="true">
               QLineEdit {
@@ -7507,19 +7865,26 @@ FILE: views\login_window.ui
               }
             </string>
            </property>
+           <property name="placeholderText">
+            <string>Username</string>
+           </property>
           </widget>
          </item>
-
          <item>
           <layout class="QHBoxLayout" name="hbox_pass_container">
-            <property name="spacing"><number>0</number></property>
-             <item>
-              <widget class="QLineEdit" name="input_pass">
-               <property name="echoMode"><enum>QLineEdit::Password</enum></property>
-               <property name="placeholderText"><string>Password</string></property>
-               <property name="minimumSize"><size><width>0</width><height>55</height></size></property>
-               <property name="styleSheet">
-                <string notr="true">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLineEdit" name="input_pass">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>55</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">
                   QLineEdit {
                     background-color: #F8FAFC;
                     border: 1px solid #E2E8F0;
@@ -7533,30 +7898,45 @@ FILE: views\login_window.ui
                     background-color: #FFFFFF;
                   }
                 </string>
-               </property>
-              </widget>
-             </item>
-             <item>
-               <widget class="QPushButton" name="btn_toggle_pass">
-                <property name="text"><string>👁️</string></property>
-                <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
-                <property name="maximumSize"><size><width>50</width><height>16777215</height></size></property>
-                <property name="styleSheet">
-                 <string>background: transparent; border: none; font-size: 18px; margin-left: -50px; color: #64748B;</string>
-                </property>
-               </widget>
-             </item>
+             </property>
+             <property name="echoMode">
+              <enum>QLineEdit::EchoMode::Password</enum>
+             </property>
+             <property name="placeholderText">
+              <string>Password</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btn_toggle_pass">
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
+             </property>
+             <property name="styleSheet">
+              <string>background: transparent; border: none; font-size: 18px; margin-left: -50px; color: #64748B;</string>
+             </property>
+             <property name="text">
+              <string>👁️</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>
        </item>
-
        <item>
         <layout class="QHBoxLayout" name="hbox_extras">
          <item>
           <widget class="QCheckBox" name="check_remember">
-           <property name="text"><string>Remember me</string></property>
-           <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
            <property name="styleSheet">
             <string>
                 QCheckBox { color: #64748B; spacing: 8px; }
@@ -7564,36 +7944,63 @@ FILE: views\login_window.ui
                 QCheckBox::indicator:checked { background-color: #06B6D4; border-color: #06B6D4; }
             </string>
            </property>
+           <property name="text">
+            <string>Remember me</string>
+           </property>
           </widget>
          </item>
-         <item><spacer name="spacer_extras"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+         <item>
+          <spacer name="spacer_extras">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
          <item>
           <widget class="QPushButton" name="btn_forgot">
-           <property name="text"><string>Forgot Password?</string></property>
-           <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
            <property name="styleSheet">
             <string>
                 QPushButton { color: #0891B2; font-weight: 600; border: none; background: transparent; }
                 QPushButton:hover { text-decoration: underline; color: #0E7490; }
             </string>
            </property>
+           <property name="text">
+            <string>Forgot Password?</string>
+           </property>
           </widget>
          </item>
         </layout>
        </item>
-
        <item>
         <widget class="QLabel" name="lbl_error">
-         <property name="text"><string></string></property>
-         <property name="styleSheet"><string>color: #EF4444; font-weight: bold; font-size: 13px;</string></property>
+         <property name="styleSheet">
+          <string>color: #EF4444; font-weight: bold; font-size: 13px;</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QPushButton" name="btn_login">
-         <property name="text"><string>Sign In</string></property>
-         <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
-         <property name="minimumSize"><size><width>0</width><height>55</height></size></property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>55</height>
+          </size>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
          <property name="styleSheet">
           <string notr="true">
            QPushButton {
@@ -7604,10 +8011,24 @@ FILE: views\login_window.ui
            QPushButton:pressed { background-color: #155E75; top: 1px; }
           </string>
          </property>
+         <property name="text">
+          <string>Sign In</string>
+         </property>
         </widget>
        </item>
-
-       <item><spacer name="s2"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
+       <item>
+        <spacer name="s2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
       </layout>
      </widget>
     </item>
@@ -7617,6 +8038,7 @@ FILE: views\login_window.ui
  <resources/>
  <connections/>
 </ui>
+
 
 ==================================================
 FILE: views\perishables_window.ui

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1080</width>
-    <height>650</height>
+    <height>676</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -18,12 +18,21 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
-    <property name="spacing"><number>0</number></property>
-    <property name="leftMargin"><number>0</number></property>
-    <property name="topMargin"><number>0</number></property>
-    <property name="rightMargin"><number>0</number></property>
-    <property name="bottomMargin"><number>0</number></property>
-
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
     <item>
      <widget class="QFrame" name="frame_brand">
       <property name="styleSheet">
@@ -36,71 +45,151 @@
        </string>
       </property>
       <layout class="QVBoxLayout" name="vbox_brand">
-       <property name="spacing"><number>20</number></property>
-       <item><spacer name="vspacer_top"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
-
+       <property name="spacing">
+        <number>20</number>
+       </property>
+       <item>
+        <spacer name="vspacer_top">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
        <item>
         <widget class="QLabel" name="lbl_logo_icon">
-         <property name="text"><string></string></property>
-         <property name="alignment"><set>Qt::AlignCenter</set></property>
-         <property name="styleSheet"><string>background: transparent;</string></property>
-         <property name="minimumSize"><size><width>200</width><height>200</height></size></property>
+         <property name="minimumSize">
+          <size>
+           <width>200</width>
+           <height>200</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string>background: transparent;</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QLabel" name="lbl_brand_title">
-         <property name="text"><string>ShelfSync</string></property>
-         <property name="alignment"><set>Qt::AlignCenter</set></property>
-         <property name="styleSheet"><string>font-size: 56px; font-weight: 800; letter-spacing: 2px; color: white;</string></property>
+         <property name="styleSheet">
+          <string>font-size: 56px; font-weight: 800; letter-spacing: 2px; color: white;</string>
+         </property>
+         <property name="text">
+          <string>&lt;span style=&quot;color: #FFFFF;&quot;&gt;Shelf&lt;/span&gt;&lt;span style=&quot;color: #148CAA;&quot;&gt;Sy&lt;/span&gt;&lt;span style=&quot;color: #11CDC8;&quot;&gt;nc&lt;/span&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QLabel" name="lbl_brand_sub">
-         <property name="text"><string>Smart Inventory &amp; POS System</string></property>
-         <property name="alignment"><set>Qt::AlignCenter</set></property>
-         <property name="styleSheet"><string>font-size: 20px; color: #94A3B8; font-weight: 400;</string></property>
+         <property name="styleSheet">
+          <string>font-size: 20px; color: #94A3B8; font-weight: 400;</string>
+         </property>
+         <property name="text">
+          <string>Smart Inventory &amp; POS System</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
         </widget>
        </item>
-
-       <item><spacer name="vspacer_bot"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
+       <item>
+        <spacer name="vspacer_bot">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
       </layout>
      </widget>
     </item>
-
     <item>
      <widget class="QFrame" name="frame_login">
-      <property name="minimumSize"><size><width>550</width><height>0</height></size></property>
-      <property name="maximumSize"><size><width>550</width><height>16777215</height></size></property>
+      <property name="minimumSize">
+       <size>
+        <width>550</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>550</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <property name="styleSheet">
        <string notr="true">
         QFrame#frame_login { background-color: white; }
        </string>
       </property>
       <layout class="QVBoxLayout" name="vbox_login">
-       <property name="spacing"><number>25</number></property>
-       <property name="leftMargin"><number>80</number></property>
-       <property name="rightMargin"><number>80</number></property>
-       <property name="topMargin"><number>60</number></property>
-       <property name="bottomMargin"><number>60</number></property>
-
-       <item><spacer name="s1"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
-
+       <property name="spacing">
+        <number>25</number>
+       </property>
+       <property name="leftMargin">
+        <number>80</number>
+       </property>
+       <property name="topMargin">
+        <number>60</number>
+       </property>
+       <property name="rightMargin">
+        <number>80</number>
+       </property>
+       <property name="bottomMargin">
+        <number>60</number>
+       </property>
+       <item>
+        <spacer name="s1">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
        <item>
         <widget class="QLabel" name="lbl_welcome">
-         <property name="text"><string>Welcome Back</string></property>
-         <property name="styleSheet"><string>font-size: 36px; font-weight: 800; color: #1E293B;</string></property>
+         <property name="styleSheet">
+          <string>font-size: 36px; font-weight: 800; color: #1E293B;</string>
+         </property>
+         <property name="text">
+          <string>Welcome Back</string>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QLabel" name="lbl_instruction">
-         <property name="text"><string>Please enter your details to sign in.</string></property>
-         <property name="styleSheet"><string>color: #64748B; font-size: 16px;</string></property>
+         <property name="styleSheet">
+          <string>color: #64748B; font-size: 16px;</string>
+         </property>
+         <property name="text">
+          <string>Please enter your details to sign in.</string>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QFrame" name="frame_role_toggle">
          <property name="styleSheet">
@@ -113,16 +202,23 @@
           </string>
          </property>
          <layout class="QHBoxLayout" name="hbox_role">
-          <property name="margin"><number>0</number></property>
-          <property name="spacing"><number>0</number></property>
-
+          <property name="spacing">
+           <number>0</number>
+          </property>
+          <property name="margin" stdset="0">
+           <number>0</number>
+          </property>
           <item>
            <widget class="QPushButton" name="btn_role_cashier">
-            <property name="text"><string>Cashier</string></property>
-            <property name="checkable"><bool>true</bool></property>
-            <property name="checked"><bool>true</bool></property>
-            <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
-            <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
             <property name="styleSheet">
              <string notr="true">
               QPushButton {
@@ -135,14 +231,28 @@
               }
              </string>
             </property>
+            <property name="text">
+             <string>Cashier</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="btn_role_manager">
-            <property name="text"><string>Manager</string></property>
-            <property name="checkable"><bool>true</bool></property>
-            <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
-            <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
             <property name="styleSheet">
              <string notr="true">
               QPushButton {
@@ -154,21 +264,31 @@
                 border: 1px solid #E2E8F0;
               }
              </string>
+            </property>
+            <property name="text">
+             <string>Manager</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
          </layout>
         </widget>
        </item>
-
        <item>
         <layout class="QVBoxLayout" name="vbox_inputs">
-         <property name="spacing"><number>16</number></property>
-
+         <property name="spacing">
+          <number>16</number>
+         </property>
          <item>
           <widget class="QLineEdit" name="input_user">
-           <property name="placeholderText"><string>Username</string></property>
-           <property name="minimumSize"><size><width>0</width><height>55</height></size></property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>55</height>
+            </size>
+           </property>
            <property name="styleSheet">
             <string notr="true">
               QLineEdit {
@@ -185,19 +305,26 @@
               }
             </string>
            </property>
+           <property name="placeholderText">
+            <string>Username</string>
+           </property>
           </widget>
          </item>
-
          <item>
           <layout class="QHBoxLayout" name="hbox_pass_container">
-            <property name="spacing"><number>0</number></property>
-             <item>
-              <widget class="QLineEdit" name="input_pass">
-               <property name="echoMode"><enum>QLineEdit::Password</enum></property>
-               <property name="placeholderText"><string>Password</string></property>
-               <property name="minimumSize"><size><width>0</width><height>55</height></size></property>
-               <property name="styleSheet">
-                <string notr="true">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLineEdit" name="input_pass">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>55</height>
+              </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">
                   QLineEdit {
                     background-color: #F8FAFC;
                     border: 1px solid #E2E8F0;
@@ -211,30 +338,45 @@
                     background-color: #FFFFFF;
                   }
                 </string>
-               </property>
-              </widget>
-             </item>
-             <item>
-               <widget class="QPushButton" name="btn_toggle_pass">
-                <property name="text"><string>👁️</string></property>
-                <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
-                <property name="maximumSize"><size><width>50</width><height>16777215</height></size></property>
-                <property name="styleSheet">
-                 <string>background: transparent; border: none; font-size: 18px; margin-left: -50px; color: #64748B;</string>
-                </property>
-               </widget>
-             </item>
+             </property>
+             <property name="echoMode">
+              <enum>QLineEdit::EchoMode::Password</enum>
+             </property>
+             <property name="placeholderText">
+              <string>Password</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btn_toggle_pass">
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
+             </property>
+             <property name="styleSheet">
+              <string>background: transparent; border: none; font-size: 18px; margin-left: -50px; color: #64748B;</string>
+             </property>
+             <property name="text">
+              <string>👁️</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>
        </item>
-
        <item>
         <layout class="QHBoxLayout" name="hbox_extras">
          <item>
           <widget class="QCheckBox" name="check_remember">
-           <property name="text"><string>Remember me</string></property>
-           <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
            <property name="styleSheet">
             <string>
                 QCheckBox { color: #64748B; spacing: 8px; }
@@ -242,36 +384,63 @@
                 QCheckBox::indicator:checked { background-color: #06B6D4; border-color: #06B6D4; }
             </string>
            </property>
+           <property name="text">
+            <string>Remember me</string>
+           </property>
           </widget>
          </item>
-         <item><spacer name="spacer_extras"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
+         <item>
+          <spacer name="spacer_extras">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
          <item>
           <widget class="QPushButton" name="btn_forgot">
-           <property name="text"><string>Forgot Password?</string></property>
-           <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
            <property name="styleSheet">
             <string>
                 QPushButton { color: #0891B2; font-weight: 600; border: none; background: transparent; }
                 QPushButton:hover { text-decoration: underline; color: #0E7490; }
             </string>
            </property>
+           <property name="text">
+            <string>Forgot Password?</string>
+           </property>
           </widget>
          </item>
         </layout>
        </item>
-
        <item>
         <widget class="QLabel" name="lbl_error">
-         <property name="text"><string></string></property>
-         <property name="styleSheet"><string>color: #EF4444; font-weight: bold; font-size: 13px;</string></property>
+         <property name="styleSheet">
+          <string>color: #EF4444; font-weight: bold; font-size: 13px;</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
         </widget>
        </item>
-
        <item>
         <widget class="QPushButton" name="btn_login">
-         <property name="text"><string>Sign In</string></property>
-         <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
-         <property name="minimumSize"><size><width>0</width><height>55</height></size></property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>55</height>
+          </size>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
          <property name="styleSheet">
           <string notr="true">
            QPushButton {
@@ -282,10 +451,24 @@
            QPushButton:pressed { background-color: #155E75; top: 1px; }
           </string>
          </property>
+         <property name="text">
+          <string>Sign In</string>
+         </property>
         </widget>
        </item>
-
-       <item><spacer name="s2"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
+       <item>
+        <spacer name="s2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
       </layout>
      </widget>
     </item>

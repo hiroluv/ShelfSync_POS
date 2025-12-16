@@ -32,7 +32,7 @@ class LoginController(QMainWindow):
 
     def setup_ui(self):
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        logo_path = os.path.join(base_path, 'assets', 'logo.png')
+        logo_path = os.path.join(base_path, 'assets', 'logo.svg')
 
         if os.path.exists(logo_path):
             pixmap = QPixmap(logo_path)

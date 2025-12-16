@@ -2,7 +2,6 @@ import sys
 import os
 import traceback
 
-# Ensure the project root is in the system path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from PyQt6.QtWidgets import QApplication

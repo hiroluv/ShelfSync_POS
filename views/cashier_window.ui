@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1084</width>
+    <width>1139</width>
     <height>579</height>
    </rect>
   </property>
@@ -77,10 +77,10 @@
           <item>
            <widget class="QLabel" name="lbl_logo">
             <property name="styleSheet">
-             <string>font-size: 24px; font-weight: 800; color: #0F172A;</string>
+             <string notr="true">font-size: 24px; font-weight: 800; color: #0F172A;</string>
             </property>
             <property name="text">
-             <string>ShelfSync POS</string>
+             <string>&lt;span style=&quot;color: #0F1428&quot;&gt;Shelf&lt;/span&gt;&lt;span style=&quot;color: #05B4D2;&quot;&gt;Sync&lt;/span&gt;</string>
             </property>
            </widget>
           </item>
@@ -120,6 +120,9 @@
                 background-color: white;
               }
              </string>
+            </property>
+            <property name="text">
+             <string/>
             </property>
             <property name="placeholderText">
              <string>Scan item or search product...</string>
@@ -195,7 +198,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>684</width>
+            <width>739</width>
             <height>499</height>
            </rect>
           </property>
