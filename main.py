@@ -39,7 +39,7 @@ class AppOrchestrator:
             self.login_window.close()
 
         except Exception:
-            print("CRITICAL ERROR LAUNCHING WINDOW:")
+            print("guba:")
             traceback.print_exc()
 
     def open_manager_window(self, user):
