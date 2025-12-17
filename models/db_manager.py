@@ -199,6 +199,24 @@ class ManagerDB:
                 conn.close()
         return False
 
+    def get_all_categories(self):
+        """Fetches unique categories for the dropdown to prevent duplicates."""
+        categories = []
+        conn = self.main_db.get_connection()
+        if conn and conn.is_connected():
+            try:
+                cursor = conn.cursor()
+                # distinct selects only unique values
+                cursor.execute("SELECT DISTINCT category FROM inventory ORDER BY category ASC")
+                for row in cursor.fetchall():
+                    if row[0]:  # Ensure not None/Empty
+                        categories.append(row[0])
+            except Exception as e:
+                print(f"Error fetching categories: {e}")
+            finally:
+                conn.close()
+        return categories
+
     # ================= DASHBOARD & ANALYTICS =================
     def get_dashboard_stats(self):
         conn = self.main_db.get_connection()

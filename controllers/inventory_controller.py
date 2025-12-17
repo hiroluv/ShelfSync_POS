@@ -1,11 +1,14 @@
-# controllers/inventory_controller.py
 from PyQt6 import QtWidgets, uic, QtCore
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QPushButton, QVBoxLayout, QWidget, QScrollArea
+from PyQt6.QtWidgets import QMessageBox
 import os
 
-from utils.ui_helper import Overlay, add_drop_shadow, set_icon
-from utils.toast_notification import show_toast
+# Utils
+try:
+    from utils.ui_helper import Overlay, add_drop_shadow, set_icon
+    from utils.toast_notification import show_toast
+except ImportError:
+    pass
 
 # Import Sub-Controllers
 from controllers.add_stock_controller import AddStockDialogController
@@ -28,53 +31,49 @@ class InventoryController:
         if hasattr(self.view, 'btn_filter_all'):
             self.set_active_filter(self.view.btn_filter_all)
 
-        # Load data safely
+        # Load data
         self.refresh_data("all")
 
     def setup_ui(self):
-        # 1. Setup Add Stock Button
+        """Configure UI elements."""
+
+        # Setup Add Stock Button
         if hasattr(self.view, 'btn_add_stock'):
             add_drop_shadow(self.view.btn_add_stock, color_alpha=100, hex_color="#06B6D4")
             set_icon(self.view.btn_add_stock, 'plus.svg', size=18)
             self.view.btn_add_stock.setText(" Add Stock")
 
-        # 2. Setup View Logs Button
+        # Setup View Logs Button
         if hasattr(self.view, 'btn_view_logs'):
             set_icon(self.view.btn_view_logs, 'clipboard.svg', size=18)
             self.view.btn_view_logs.setText(" Audit Logs")
 
-        # 3. Setup Filter Button Styles
+        # Setup Filter Button Styles
         style_active = """
             QPushButton {
-                background-color: #06B6D4; 
-                color: white; 
-                border: none; 
-                border-radius: 8px; 
-                font-weight: bold; 
-                padding: 5px 15px;
+                background-color: #06B6D4; color: white; border: none; border-radius: 18px; font-weight: bold; font-size: 13px;
             }
         """
         style_default = """
             QPushButton {
-                background-color: #F1F5F9; 
-                color: #64748B; 
-                border: 1px solid #E2E8F0; 
-                border-radius: 8px; 
-                font-weight: bold; 
-                padding: 5px 15px;
+                background-color: white; color: #64748B; border: 1px solid #E2E8F0; border-radius: 18px; font-weight: 600; font-size: 13px;
             }
-            QPushButton:hover { background-color: #E2E8F0; }
+            QPushButton:hover { background-color: #F8FAFC; }
         """
 
-        buttons = ['btn_filter_all', 'btn_filter_low', 'btn_filter_out', 'btn_filter_expiring']
+        buttons = ['btn_filter_all', 'btn_filter_low', 'btn_filter_out']
         for btn_name in buttons:
             if hasattr(self.view, btn_name):
                 btn = getattr(self.view, btn_name)
                 btn.active_style = style_active
                 btn.default_style = style_default
+                # Reset to default initially (logic handles activation)
                 btn.setStyleSheet(style_default)
 
     def setup_connections(self):
+        """Connect buttons and inputs."""
+
+        # Main Actions
         if hasattr(self.view, 'btn_add_stock'):
             self.view.btn_add_stock.clicked.connect(self.open_add_stock_dialog)
 
@@ -92,11 +91,13 @@ class InventoryController:
             self.view.btn_filter_out.clicked.connect(
                 lambda: [self.set_active_filter(self.view.btn_filter_out), self.refresh_data("out")])
 
-        # Search
-        if hasattr(self.view, 'input_search'):
-            self.view.input_search.textChanged.connect(self.handle_search)
+        # Search Bar Connection
+        # Note: Updated name to 'lineEdit_search' based on your latest UI file
+        if hasattr(self.view, 'lineEdit_search'):
+            self.view.lineEdit_search.textChanged.connect(self.handle_search)
 
     def set_active_filter(self, button):
+        """Highlight the active filter button."""
         if self.active_filter_button and hasattr(self.active_filter_button, 'default_style'):
             self.active_filter_button.setStyleSheet(self.active_filter_button.default_style)
 
@@ -104,27 +105,24 @@ class InventoryController:
         if hasattr(button, 'active_style'):
             button.setStyleSheet(button.active_style)
 
-    # --- [NEW] Helper to get the Real User Name ---
     def get_current_username(self):
         """Safely retrieves the name of the currently logged-in user."""
         if not hasattr(self.main_controller, 'user') or not self.main_controller.user:
-            return "System Admin"  # Fallback
-
-        # Handle if user is a dictionary or an object
+            return "System Admin"
         user_data = self.main_controller.user
         if isinstance(user_data, dict):
             return user_data.get('name', 'Unknown User')
         return getattr(user_data, 'name', 'Unknown User')
 
     def refresh_data(self, filter_type="all"):
-
+        """Refreshes the inventory list based on filters AND search text."""
         if not hasattr(self.view, 'layout_inventory_list'):
-            print("CRITICAL ERROR: 'layout_inventory_list' not found in UI.")
             return
 
         layout = self.view.layout_inventory_list
 
-        while layout.count() > 1:
+        # Clear existing items
+        while layout.count() > 1:  # Keep the spacer
             item = layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
@@ -132,19 +130,38 @@ class InventoryController:
         # === FETCH DATA ===
         products = self.db.get_inventory_items()
 
-        # Filter Data
+        # === GET SEARCH TEXT ===
+        search_text = ""
+        if hasattr(self.view, 'lineEdit_search'):
+            search_text = self.view.lineEdit_search.text().lower().strip()
+
         filtered_products = []
-        if filter_type == "all":
-            filtered_products = products
-        elif filter_type == "low":
-            filtered_products = [p for p in products if p.stock <= p.threshold and p.stock > 0]
-        elif filter_type == "out":
-            filtered_products = [p for p in products if p.stock == 0]
+
+        for p in products:
+            # 1. Search Filter
+            if search_text:
+                name_match = search_text in p.name.lower()
+                cat_match = search_text in p.category.lower()
+                if not (name_match or cat_match):
+                    continue
+
+                    # 2. Category/Status Filter
+            # (Note: In a real app, you might track 'current_filter' state rather than passing string)
+            # But for now, we rely on the button click passing the string,
+            # or if called from search, we default to "all" (or we should track the active state).
+            # *Improvement*: You might want to save self.current_filter_state = "all" in init
+
+            if filter_type == "low":
+                if not (p.stock <= p.threshold and p.stock > 0): continue
+            elif filter_type == "out":
+                if p.stock != 0: continue
+
+            filtered_products.append(p)
 
         # Sort (Newest First)
         filtered_products.sort(key=lambda x: x.id, reverse=True)
 
-        # ROWS
+        # === RENDER ROWS ===
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         row_ui_path = os.path.join(base_path, 'views', 'item_inventory.ui')
 
@@ -173,24 +190,37 @@ class InventoryController:
                         row_widget.lbl_status.setStyleSheet(
                             "background-color: #ECFDF5; color: #059669; border-radius: 12px; font-weight: bold;")
 
-                # Edit Button - Pass product to open_edit_dialog
+                # Edit Button
                 if hasattr(row_widget, 'btn_edit'):
                     row_widget.btn_edit.clicked.connect(lambda _, p=product: self.open_edit_dialog(p))
-                spacer_index = layout.count() - 1  # Always insert at (count() - 1) to keep the spacer at the bottom
+
+                # Insert row before the spacer
+                spacer_index = layout.count() - 1
                 layout.insertWidget(spacer_index, row_widget)
 
             except Exception as e:
                 print(f"Error loading row: {e}")
 
     def handle_search(self, text):
-        self.refresh_data("all")
+        """Called when text changes in search bar."""
+        # We assume the user wants to search across 'all' or the current view.
+        # For simplicity, we refresh current view.
+        # Ideally, you check which button is active.
+        filter_mode = "all"
+        if self.active_filter_button == getattr(self.view, 'btn_filter_low', None):
+            filter_mode = "low"
+        elif self.active_filter_button == getattr(self.view, 'btn_filter_out', None):
+            filter_mode = "out"
+
+        self.refresh_data(filter_mode)
 
     def open_add_stock_dialog(self):
         try:
             overlay = Overlay(self.main_controller)
             overlay.show()
 
-            dialog = AddStockDialogController(parent=self.main_controller)
+            # Pass main_controller so it can access self.main_controller.db
+            dialog = AddStockDialogController(main_controller=self.main_controller)
             dialog.setModal(True)
             if dialog.exec():
                 show_toast(self.main_controller, "Stock Added Successfully!", type="success")
@@ -199,17 +229,19 @@ class InventoryController:
             overlay.close()
         except Exception as e:
             print(f"Error opening add stock: {e}")
+            # Ensure overlay closes if error
+            try:
+                overlay.close()
+            except:
+                pass
 
     def open_edit_dialog(self, product):
         try:
             overlay = Overlay(self.main_controller)
             overlay.show()
 
-            # --- [FIX] Get Real User Name ---
             current_user = self.get_current_username()
-            # --------------------------------
 
-            # Pass the REAL user name to the edit dialog
             dialog = EditProductDialogController(self.main_controller, product, current_user)
             dialog.setModal(True)
             if dialog.exec():
@@ -220,10 +252,23 @@ class InventoryController:
 
         except Exception as e:
             print(f"Error opening edit dialog: {e}")
+            try:
+                overlay.close()
+            except:
+                pass
 
     def open_audit_logs(self):
         try:
+            overlay = Overlay(self.main_controller)
+            overlay.show()
+
             window = AuditWindowController(self.main_controller)
             window.exec()
+
+            overlay.close()
         except Exception as e:
             print(f"Error opening audit logs: {e}")
+            try:
+                overlay.close()
+            except:
+                pass

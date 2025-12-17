@@ -1,10 +1,9 @@
-# controllers/add_stock_controller.py
 from PyQt6 import QtWidgets, uic
-from PyQt6.QtWidgets import QDialog, QPushButton, QLineEdit, QDateEdit, QMessageBox
-from PyQt6.QtCore import Qt, QPoint, QDate
+from PyQt6.QtWidgets import QDialog, QMessageBox, QLineEdit, QComboBox, QDateEdit, QPushButton
+from PyQt6.QtCore import Qt, QDate
 import os
-import datetime
 
+# Import Utils
 try:
     from utils.ui_helper import add_drop_shadow
 except ImportError:
@@ -13,142 +12,182 @@ except ImportError:
 
 
 class AddStockDialogController(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.db = None
-        if parent and hasattr(parent, 'db'):
-            self.db = parent.db
-
+    def __init__(self, main_controller=None):
+        super().__init__()
+        self.main_controller = main_controller
+        self.db = main_controller.db if main_controller else None
         self.old_pos = None
 
-        # For passing back to inventory controller
-        self.accepted_product_name = ""
-        self.accepted_action = "Product Added"
-
         # Load UI
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        ui_path = os.path.join(current_dir, '..', 'views', 'add_stock_dialog.ui')
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        ui_path = os.path.join(base_path, 'views', 'add_stock_dialog.ui')
 
         if not os.path.exists(ui_path):
-            QMessageBox.critical(None, "Error", f"Add Stock UI file not found:\n{ui_path}")
+            QMessageBox.critical(None, "Error", f"UI file not found: {ui_path}")
             self.reject()
             return
 
         uic.loadUi(ui_path, self)
 
-        # Frameless + draggable
+        # UI Setup
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        # Drop shadow
         dialog_content = self.findChild(QtWidgets.QFrame, 'dialog_content')
         if dialog_content:
             add_drop_shadow(dialog_content)
 
-        # Get widgets — exact names from your UI
-        self.txt_barcode = self.findChild(QLineEdit, 'txt_barcode')
+        # --- 1. Get Widgets using IDs from your XML ---
         self.txt_name = self.findChild(QLineEdit, 'txt_name')
-        self.txt_category = self.findChild(QLineEdit, 'txt_category')
+
+        # [NEW] Get the new text input
+        self.txt_new_category = self.findChild(QLineEdit, 'txt_new_category')
+
+        self.cmb_category = self.findChild(QComboBox, 'cmb_category')
+
+
         self.txt_cost = self.findChild(QLineEdit, 'txt_cost')
         self.txt_price = self.findChild(QLineEdit, 'txt_price')
         self.txt_stock = self.findChild(QLineEdit, 'txt_stock')
         self.date_expiry = self.findChild(QDateEdit, 'date_expiry')
+        self.txt_barcode = self.findChild(QLineEdit, 'txt_barcode')
+
         self.btn_save = self.findChild(QPushButton, 'btn_save')
         self.btn_cancel = self.findChild(QPushButton, 'btn_cancel')
 
-        # Safety check
-        missing = []
-        if not self.txt_name: missing.append("txt_name")
-        if not self.txt_category: missing.append("txt_category")
-        if not self.txt_cost: missing.append("txt_cost")
-        if not self.txt_price: missing.append("txt_price")
-        if not self.txt_stock: missing.append("txt_stock")
-        if not self.date_expiry: missing.append("date_expiry")
-        if not self.btn_save: missing.append("btn_save")
-        if not self.btn_cancel: missing.append("btn_cancel")
+        # --- 2. Setup Defaults ---
+        self.populate_categories()
 
-        if missing:
-            QMessageBox.critical(self, "UI Error", f"Missing widgets:\n{', '.join(missing)}")
-            self.reject()
-            return
+        if self.date_expiry:
+            self.date_expiry.setDate(QDate.currentDate())
+            self.date_expiry.setCalendarPopup(True)
 
-        # Connect buttons
-        self.btn_save.clicked.connect(self.on_save_clicked)
-        self.btn_cancel.clicked.connect(self.reject)
+        # --- 3. Connections ---
+        if self.btn_save: self.btn_save.clicked.connect(self.save_product)
+        if self.btn_cancel: self.btn_cancel.clicked.connect(self.reject)
 
-        # Default values
-        self.txt_stock.setText("0")
-        self.date_expiry.setDate(QDate.currentDate())
-        self.date_expiry.setCalendarPopup(True)
-        self.date_expiry.setDisplayFormat("yyyy-MM-dd")
+        # [NEW] Connect the "Seesaw" logic
+        if self.txt_new_category:
+            self.txt_new_category.textChanged.connect(self.handle_category_input_change)
 
-    def on_save_clicked(self):
+    def populate_categories(self):
+        """Fetches categories from DB to fill the ComboBox."""
+        if not self.cmb_category: return
+
+        # 1. Clear existing items
+        self.cmb_category.clear()
+
+        # 2. Add Default Option
+        self.cmb_category.addItem("Select from list...", None)
+
+        # 3. Fetch from Database
+        if self.db:
+            try:
+                categories = self.db.get_all_categories()
+
+                # Debug print to verify data
+                print(f"DEBUG: Categories fetched from DB: {categories}")
+
+                if categories:
+                    self.cmb_category.addItems(categories)
+            except Exception as e:
+                print(f"Error loading categories: {e}")
+
+        # 4. Final UI Adjustments
+        self.cmb_category.setEditable(False)
+
+        # FORCE SELECTION: Ensure the first item ("Select from list...") is selected
+        if self.cmb_category.count() > 0:
+            self.cmb_category.setCurrentIndex(0)
+
+        # Ensure it is enabled
+        self.cmb_category.setEnabled(True)
+
+    def handle_category_input_change(self, text):
+        """
+        If text is typed in 'New Category', disable the Dropdown.
+        If 'New Category' is empty, enable the Dropdown.
+        """
+        if not self.cmb_category: return
+
+        if text.strip():
+            # User is typing a new category -> Disable dropdown
+            self.cmb_category.setEnabled(False)
+            self.cmb_category.setCurrentIndex(0)  # Reset dropdown selection
+        else:
+            # User cleared the text -> Enable dropdown
+            self.cmb_category.setEnabled(True)
+
+    def save_product(self):
+        """Validates inputs and saves via ManagerDB."""
         try:
-            # Get and validate inputs
-            name = self.txt_name.text().strip()
-            category = self.txt_category.text().strip()
-            cost_text = self.txt_cost.text().strip()
-            price_text = self.txt_price.text().strip()
-            stock_text = self.txt_stock.text().strip()
+            # 1. Gather Inputs
+            name = self.txt_name.text().strip() if self.txt_name else ""
 
+            # [UPDATED LOGIC] Determine which Category to use
+            final_category = ""
+
+            # Check 'New Category' Box first
+            new_cat_text = self.txt_new_category.text().strip() if self.txt_new_category else ""
+
+            # Check Dropdown second
+            dropdown_text = ""
+            if self.cmb_category and self.cmb_category.isEnabled():
+                # We use currentText() but we ignore the placeholder "Select from list..."
+                current = self.cmb_category.currentText()
+                if current != "Select from list...":
+                    dropdown_text = current
+
+            # Decision Matrix
+            if new_cat_text:
+                final_category = new_cat_text
+            elif dropdown_text:
+                final_category = dropdown_text
+
+            # Numbers (QLineEdit)
+            cost_text = self.txt_cost.text().strip() if self.txt_cost else "0"
+            price_text = self.txt_price.text().strip() if self.txt_price else "0"
+            stock_text = self.txt_stock.text().strip() if self.txt_stock else "0"
+
+            # Expiry (QDateEdit)
+            expiry_str = ""
+            if self.date_expiry:
+                expiry_str = self.date_expiry.date().toString("yyyy-MM-dd")
+
+            # 2. Validation
             if not name:
-                QMessageBox.warning(self, "Required", "Product Name is required.")
-                return
-            if not category:
-                QMessageBox.warning(self, "Required", "Category is required.")
-                return
-            if not cost_text or not price_text or not stock_text:
-                QMessageBox.warning(self, "Required", "Please fill Cost Price, Selling Price, and Initial Stock.")
+                QMessageBox.warning(self, "Validation", "Product Name is required.")
                 return
 
-            cost_price = float(cost_text)
-            selling_price = float(price_text)
-            stock = int(stock_text)
-
-            if cost_price < 0 or selling_price < 0 or stock < 0:
-                QMessageBox.warning(self, "Invalid", "Prices and stock cannot be negative.")
+            if not final_category:
+                QMessageBox.warning(self, "Validation", "Please select an existing category OR type a new one.")
                 return
 
-            # Expiry date - optional
-            expiry_qdate = self.date_expiry.date()
-            expiry_date = expiry_qdate.toPyDate()
-            expiry_date_str = expiry_date.strftime("%Y-%m-%d") if expiry_qdate >= QDate.currentDate() else None
-
-            # Barcode is optional
-            barcode = self.txt_barcode.text().strip() if self.txt_barcode else None
-
-            # Insert into database
-            if not self.db:
-                QMessageBox.critical(self, "Error", "Database not available.")
+            try:
+                cost = float(cost_text)
+                price = float(price_text)
+                stock = int(stock_text)
+            except ValueError:
+                QMessageBox.warning(self, "Validation", "Stock and Price must be valid numbers.")
                 return
 
-            conn = self.db.get_connection()
-            if not conn:
-                QMessageBox.critical(self, "Error", "Cannot connect to database.")
-                return
+            # 3. Save to Database
+            if self.db:
+                # Use final_category here
+                success = self.db.add_product(name, final_category, stock, cost, price, 10, expiry_str)
 
-            cursor = conn.cursor()
-            query = """
-                INSERT INTO inventory 
-                (name, category, cost_price, selling_price, stock, expiry_date)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(query, (name, category, cost_price, selling_price, stock, expiry_date_str))
-            conn.commit()
-            cursor.close()
-            conn.close()
+                if success:
+                    self.accept()  # Close dialog on success
+                else:
+                    QMessageBox.critical(self, "Database Error", "The database returned an error.")
+            else:
+                QMessageBox.critical(self, "Error", "Database connection missing.")
 
-            # Success
-            self.accepted_product_name = name
-            self.accept()
-
-        except ValueError:
-            QMessageBox.warning(self, "Invalid Input", "Please enter valid numbers for prices and stock.")
         except Exception as e:
-            QMessageBox.critical(self, "Database Error", f"Failed to save product:\n{e}")
-            print(f"Error saving product: {e}")
+            print(f"Error in save_product: {e}")
+            QMessageBox.critical(self, "Error", f"An unexpected error occurred:\n{e}")
 
-    # Window drag support
+    # --- Dragging Logic ---
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.old_pos = event.globalPosition().toPoint()

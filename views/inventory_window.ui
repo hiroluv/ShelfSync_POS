@@ -82,6 +82,35 @@
         <number>30</number>
        </property>
        <item>
+        <widget class="QLineEdit" name="lineEdit_search">
+         <property name="minimumSize">
+          <size>
+           <width>240</width>
+           <height>36</height>
+          </size>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">
+            QLineEdit {
+                background-color: white;
+                border: 1px solid #E2E8F0;
+                border-radius: 18px;
+                padding-left: 15px;
+                padding-right: 15px;
+                font-size: 13px;
+                color: #0F172A;
+            }
+            QLineEdit:focus {
+                border: 1px solid #06B6D4;
+            }
+          </string>
+         </property>
+         <property name="placeholderText">
+          <string>Search products...</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="btn_filter_all">
          <property name="minimumSize">
           <size>

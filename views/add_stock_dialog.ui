@@ -7,8 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>450</width>
-    <height>650</height>
+    <height>720</height>
    </rect>
+  </property>
+  <property name="accessibleDescription">
+   <string/>
   </property>
   <property name="styleSheet">
    <string notr="true">
@@ -35,6 +38,31 @@
     QLineEdit:focus, QDateEdit:focus {
         border: 2px solid #06B6D4;
         background-color: white;
+    }
+    /* --- COMBOBOX STYLING --- */
+    QComboBox {
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: 14px;
+        color: #0F172A;
+        min-height: 25px;
+    }
+    QComboBox:focus {
+        border: 2px solid #06B6D4;
+        background-color: white;
+    }
+    QComboBox::drop-down { border: none; width: 20px; }
+
+    /* --- THIS IS THE FIX: VISIBLE POPUP LIST --- */
+    QComboBox QAbstractItemView {
+        background-color: white;
+        color: #334155;
+        border: 1px solid #E2E8F0;
+        selection-background-color: #06B6D4;
+        selection-color: white;
+        outline: none;
     }
    </string>
   </property>
@@ -111,16 +139,48 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="lbl_cat">
+       <widget class="QLabel" name="lbl_new_cat">
         <property name="text">
-         <string>Category</string>
+         <string>New Category</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="txt_category">
+       <widget class="QLineEdit" name="txt_new_category">
+        <property name="toolTip">
+         <string>Type here to create a new category. This will disable the dropdown below.</string>
+        </property>
         <property name="placeholderText">
-         <string>e.g. Condiments, Canned, Frozen</string>
+         <string>Type here to create a New Category...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lbl_cat">
+        <property name="text">
+         <string>Existing Category</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cmb_category">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>43</height>
+         </size>
+        </property>
+        <property name="accessibleDescription">
+         <string notr="true"/>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="editable">
+         <bool>false</bool>
+        </property>
+        <property name="placeholderText">
+         <string>Select from list...</string>
         </property>
        </widget>
       </item>
