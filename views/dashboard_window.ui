@@ -335,6 +335,9 @@
               <height>160</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Revenue of the day&lt;/p&gt;&lt;/body&gt;&lt;/html&gt; </string>
+            </property>
             <property name="styleSheet">
              <string notr="true">QFrame { background-color: white; border-radius: 16px; border: 1px solid #E2E8F0; margin: 5px; } QLabel { border: none; background: transparent; margin: 0px; }</string>
             </property>

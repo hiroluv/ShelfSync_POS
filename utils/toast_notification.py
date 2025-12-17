@@ -16,14 +16,14 @@ class ToastNotification(QWidget):
             text_color = "#059669"  # Green-600
             border_color = "#10B981"  # Green-500
             icon = "✓"
-        elif type == "error":
+        elif type in "error":
             bg_color = "#FEF2F2"  # Red-50
             text_color = "#DC2626"  # Red-600
             border_color = "#EF4444"  # Red-500
             icon = "✕"
         else:  # Info
             bg_color = "#F0F9FF"
-            text_color = "#0891B2"
+            text_color = "#DC2626"
             border_color = "#06B6D4"
             icon = "ℹ"
 

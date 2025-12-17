@@ -62,6 +62,12 @@
        <height>12</height>
       </size>
      </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="whatsThis">
+      <string>nigawn1i23ga4567asskldjaskldj</string>
+     </property>
      <property name="styleSheet">
       <string notr="true">
         QProgressBar {
