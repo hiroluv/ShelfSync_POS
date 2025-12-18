@@ -15,25 +15,21 @@ class Cart_Controller:
         self.db = db
         self.cart_data = {}
 
-        # --- UI CONFIGURATION ---
+        # ui edits
         self.scroll_area.setVisible(True)
-        # Fix: Hide horizontal scrollbar to prevent covering items
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.scroll_area.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
 
-        # Setup Container
+        #Container
         self.container_widget = QWidget()
         self.container_widget.setStyleSheet("background-color: transparent;")
-
         self.container_layout = QVBoxLayout(self.container_widget)
         self.container_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.container_layout.setContentsMargins(0, 0, 0, 0)
         self.container_layout.setSpacing(8)
-
         self.scroll_area.setWidget(self.container_widget)
         self.scroll_area.setWidgetResizable(True)
-
         # Initial Button State
         self.update_checkout_button_state()
 
@@ -51,7 +47,6 @@ class Cart_Controller:
 
     def update_quantity(self, product_id, change, all_products):
         if product_id not in self.cart_data: return
-
         product = next((p for p in all_products if p.id == product_id), None)
         new_qty = self.cart_data[product_id] + change
 
@@ -63,20 +58,17 @@ class Cart_Controller:
 
         if product_id in self.cart_data:
             self.cart_data[product_id] = new_qty
-
-        self.render_cart(all_products)
+        self.render_cart(all_products) #refesh ang cart every add
 
     def render_cart(self, all_products):
         self.clear_layout(self.container_layout)
-
         subtotal = 0.0
         total_items = 0
         is_empty = len(self.cart_data) == 0
 
-        # Update Button State based on cart content
+        # Update Button State depende sa sulod sa card
         self.update_checkout_button_state()
-
-        # Handle Empty State
+        # empty state
         if hasattr(self.parent, 'lbl_empty_title'):
             self.parent.lbl_empty_title.setVisible(False)
 
@@ -103,7 +95,6 @@ class Cart_Controller:
             row_widget = QWidget()
             try:
                 uic.loadUi(row_ui_path, row_widget)
-
                 row_widget.setMinimumHeight(70)
                 row_widget.setMinimumWidth(0)
 
@@ -121,7 +112,7 @@ class Cart_Controller:
                 self.container_layout.addWidget(row_widget)
 
             except Exception as e:
-                print(f"Error loading row UI: {e}")
+                print(f"dili mag loadd bro: {e}")
 
         self.container_layout.addStretch()
 
@@ -130,14 +121,14 @@ class Cart_Controller:
         self._update_totals(subtotal, vat, grand_total, total_items)
 
     def update_checkout_button_state(self):
-        """Updates the style and enabled state of the checkout button."""
+        #make the process button blue when cart is True
         if not hasattr(self.parent, 'btn_checkout'): return
 
         btn = self.parent.btn_checkout
         is_empty = len(self.cart_data) == 0
 
         if is_empty:
-            # GRAY STATE with INVENTORY-STYLE SHADOW
+            # grey with blue shadow when empty
             btn.setEnabled(False)
             btn.setStyleSheet("""
                 QPushButton {
@@ -150,20 +141,17 @@ class Cart_Controller:
                 }
             """)
 
-            # --- SHADOW LOGIC MATCHING INVENTORY ADD BUTTON ---
+            #shadowssss
             shadow = QGraphicsDropShadowEffect()
             shadow.setBlurRadius(20)  # Standard soft blur
             shadow.setOffset(0, 8)  # Falling shadow offset
-
-            # Using the exact color/alpha often used in modern UI kits like Tailwind (Cyan-500 equivalent)
-            # This matches the "Inventory Add Button" style glow
             color = QColor("#06B6D4")
-            color.setAlpha(100)  # Soft transparency (approx 40%)
+            color.setAlpha(100)  #transparency sa shadow
             shadow.setColor(color)
 
             btn.setGraphicsEffect(shadow)
         else:
-            # ACTIVE STATE (Clean)
+            # ACTIVE STATE
             btn.setEnabled(True)
             btn.setStyleSheet("""
                 QPushButton {

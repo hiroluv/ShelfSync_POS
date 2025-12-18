@@ -11,11 +11,9 @@ class ReportDialogController(QDialog):
         super().__init__(parent)
         loadUi("views/report_dialog.ui", self)
 
-        # 1. Initialize Database Logic
+        #Database Logic
         self.main_db = DatabaseManager()
         self.db = self.main_db.manager_db
-
-        # 2. Setup UI (Styles are now loaded directly from report_dialog.ui)
         self.setup_ui()
 
     def setup_ui(self):
@@ -23,8 +21,6 @@ class ReportDialogController(QDialog):
         now = datetime.now()
         self.startDateEdit.setDate(QDate(now.year, now.month, 1))
         self.endDateEdit.setDate(QDate.currentDate())
-
-        # [NEW] Add "All Reports" to the dropdown
         self.reportTypeCombo.addItem("All Reports")
 
         self.exportBtn.clicked.connect(self.handle_export)
@@ -35,20 +31,19 @@ class ReportDialogController(QDialog):
         start = self.startDateEdit.date().toString("yyyy-MM-dd")
         end = self.endDateEdit.date().toString("yyyy-MM-dd")
 
-        # 1. Determine Default Filename
+        # 1. DetermineFilename
         filename = f"{rpt_type.replace(' ', '_')}_{end}.pdf"
 
-        # 2. Ask Where to Save (Before doing any DB work)
+        # 2. Ask Where to Save
         file_path, _ = QFileDialog.getSaveFileName(self, "Save Report", filename, "PDF Files (*.pdf)")
 
         if not file_path:
-            return  # User cancelled
+            return  # User cancel
 
         try:
-            # Initialize the Generator with the chosen path
             gen = PDFReportGenerator(file_path)
 
-            # --- OPTION A: GENERATE EVERYTHING ---
+            #GENERATE EVERYTHING
             if rpt_type == "All Reports":
                 # 1. Sales
                 gen.add_sales_section(self.db.get_sales_report_data(start, end), start, end)
@@ -59,7 +54,7 @@ class ReportDialogController(QDialog):
                 # 4. Audit Logs
                 gen.add_audit_section(self.db.get_audit_log_data(start, end), start, end)
 
-            # --- OPTION B: GENERATE INDIVIDUAL REPORTS ---
+            #GENERATE INDIVIDUAL REPORTS
             elif rpt_type == "Sales Report":
                 gen.add_sales_section(self.db.get_sales_report_data(start, end), start, end)
 
@@ -72,7 +67,7 @@ class ReportDialogController(QDialog):
             elif rpt_type == "Audit Logs":
                 gen.add_audit_section(self.db.get_audit_log_data(start, end), start, end)
 
-            # 3. Finalize and Write File
+            #Finalize and Write File
             if gen.build():
                 QMessageBox.information(self, "Success", "Report Generated Successfully!")
                 self.close()

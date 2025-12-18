@@ -122,9 +122,6 @@ class UsersController:
         msg_box.setText("Are you sure you want to delete this user?")
         msg_box.setIcon(QtWidgets.QMessageBox.Icon.Question)
         msg_box.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
-
-        # 2. Apply a specific style to fix the visibility issue
-        # We force a dark background and ensure buttons are visible
         msg_box.setStyleSheet("""
             QMessageBox {
                 background-color: #1F2937;  /* Dark Grey Background */
@@ -147,7 +144,6 @@ class UsersController:
             }
         """)
 
-        # 3. Show the dialog
         overlay = Overlay(self.main_controller)
         overlay.show()
         reply = msg_box.exec()

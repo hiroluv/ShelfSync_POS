@@ -16,122 +16,92 @@
   <property name="styleSheet">
    <string notr="true">
     QDialog {
-
         background-color: #FFFFFF;
-
     }
 
     QLabel {
-
         color: #475569;
-
         font-family: &quot;Segoe UI&quot;;
-
         font-size: 14px;
-
     }
 
     QGroupBox {
-
         border: 1px solid #E2E8F0;
-
         border-radius: 8px;
-
         margin-top: 24px;
-
         font-family: &quot;Segoe UI&quot;;
-
         font-weight: 600;
-
         color: #475569;
-
     }
 
     QGroupBox::title {
-
         subcontrol-origin: margin;
-
         subcontrol-position: top left;
-
         left: 10px;
-
         padding: 0 5px;
-
     }
 
     QComboBox, QDateEdit {
-
         border: 1px solid #CBD5E1;
-
         border-radius: 6px;
-
         padding: 6px 12px;
-		background:rgb(118, 118, 118);
         background-color: #F8FAFC;
-
-
         color: #334155;
-
         font-family: &quot;Segoe UI&quot;;
-
         font-size: 13px;
+    }
 
+    /* Target the calendar widget inside QDateEdit */
+    QCalendarWidget QWidget {
+        background-color: black;
+        color: white;
+    }
+
+    QCalendarWidget QAbstractItemView:enabled {
+        color: white;
+        background-color: black;
+        selection-background-color: #2563EB;
+        selection-color: white;
+    }
+
+    QCalendarWidget QToolButton {
+        color: white;
+        background-color: black;
     }
 
     QComboBox:hover, QDateEdit:hover {
-
         border-color: #94A3B8;
-
     }
 
     QComboBox::drop-down {
-
         border: 1px solid #CBD5E1;
-
         width: 20px;
-
     }
 
     QPushButton {
-
         border: 1px solid #CBD5E1;
-
         border-radius: 6px;
-
         padding: 8px 16px;
-
         background-color: #FFFFFF;
-
         color: #475569;
-
         font-family: &quot;Segoe UI&quot;;
-
         font-weight: 600;
-
     }
 
     QPushButton:hover {
-
         background-color: #F1F5F9;
-
         border-color: #94A3B8;
-
     }
 
     QPushButton#exportBtn {
-
         background-color: #2563EB;
-
         color: white;
-
         border: 1px solid #2563EB;
-
     }
 
-    QPushButton#exportBtn: QPushButton:hover { background-color: #0E7490; }
-
-    
-
+    QPushButton#exportBtn:hover {
+        background-color: #0E7490;
+    }
    </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">

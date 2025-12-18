@@ -1,9 +1,11 @@
 === PROJECT STRUCTURE ===
 ShelfSync_POS/
     export_project.py
+    Inventory_Valuation_2025-12-18.pdf
     main.py
     project_code_dump.txt
     READMe.md
+    Sales_Report_2025-12-18.pdf
     controllers/
         add_stock_controller.py
         audit_controller.py
@@ -29,6 +31,8 @@ ShelfSync_POS/
     Reports/
         All_Reports the looooooungg wayy.pdf
         All_Reports_2025-12-17.pdf
+        All_Reports_2025-12-18.pdf
+        Inventory_Valuation_2025-12-18.pdf
         Sales_Report_2025-12-17.pdf
     utils/
         pdf_generator.py
@@ -150,11 +154,9 @@ if __name__ == "__main__":
 FILE: controllers\add_stock_controller.py
 ==================================================
 from PyQt6 import QtWidgets, uic
-from PyQt6.QtWidgets import QDialog, QMessageBox, QLineEdit, QComboBox, QDateEdit, QPushButton
+from PyQt6.QtWidgets import QDialog, QMessageBox, QLineEdit, QDateEdit, QPushButton
 from PyQt6.QtCore import Qt, QDate
 import os
-
-# Import Utils
 try:
     from utils.ui_helper import add_drop_shadow
 except ImportError:
@@ -180,7 +182,7 @@ class AddStockDialogController(QDialog):
 
         uic.loadUi(ui_path, self)
 
-        # UI Setup
+        # UI
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
@@ -188,54 +190,9 @@ class AddStockDialogController(QDialog):
         if dialog_content:
             add_drop_shadow(dialog_content)
 
-        # --- 1. Get Widgets using IDs from your XML ---
+        # Get Widgets
         self.txt_name = self.findChild(QLineEdit, 'txt_name')
-
-        # [NEW] Get the new text input
-        self.txt_new_category = self.findChild(QLineEdit, 'txt_new_category')
-
-        self.cmb_category = self.findChild(QComboBox, 'cmb_category')
-
-        # =======================================================
-        # === [FIX] INJECTED STYLESHEET FOR VISIBLE DROPDOWN ===
-        # =======================================================
-        if self.cmb_category:
-            self.cmb_category.setStyleSheet("""
-                /* 1. Normal State (Matches your XML) */
-                QComboBox {
-                    background-color: #F8FAFC;
-                    border: 1px solid #E2E8F0;
-                    border-radius: 8px;
-                    padding: 10px;
-                    font-size: 14px;
-                    color: #334155;
-                }
-
-                /* 2. Disabled State (Matches your XML exactly) */
-                QComboBox:disabled {
-                    background-color: #F1F5F9;
-                    color: #94A3B8;
-                    border: 1px solid #E2E8F0;
-                }
-
-                /* 3. Dropdown Arrow Area */
-                QComboBox::drop-down {
-                    border: none;
-                    width: 30px;
-                }
-
-                /* 4. THE FIX: Styles the actual popup list to be visible */
-                QComboBox QAbstractItemView {
-                    background-color: white;
-                    color: #334155;
-                    selection-background-color: #06B6D4;
-                    selection-color: white;
-                    border: 1px solid #E2E8F0;
-                    outline: none;
-                }
-            """)
-        # =======================================================
-
+        self.txt_category = self.findChild(QLineEdit, 'txt_category')
         self.txt_cost = self.findChild(QLineEdit, 'txt_cost')
         self.txt_price = self.findChild(QLineEdit, 'txt_price')
         self.txt_stock = self.findChild(QLineEdit, 'txt_stock')
@@ -244,115 +201,34 @@ class AddStockDialogController(QDialog):
 
         self.btn_save = self.findChild(QPushButton, 'btn_save')
         self.btn_cancel = self.findChild(QPushButton, 'btn_cancel')
-
-        # --- 2. Setup Defaults ---
-        self.populate_categories()
-
+        # defaults
         if self.date_expiry:
             self.date_expiry.setDate(QDate.currentDate())
             self.date_expiry.setCalendarPopup(True)
-
-        # --- 3. Connections ---
+        # Connections
         if self.btn_save: self.btn_save.clicked.connect(self.save_product)
         if self.btn_cancel: self.btn_cancel.clicked.connect(self.reject)
 
-        # [NEW] Connect the "Seesaw" logic
-        if self.txt_new_category:
-            self.txt_new_category.textChanged.connect(self.handle_category_input_change)
-
-    def populate_categories(self):
-        """Fetches categories from DB to fill the ComboBox."""
-        if not self.cmb_category: return
-
-        # 1. Clear existing items
-        self.cmb_category.clear()
-
-        # 2. Add Default Option
-        self.cmb_category.addItem("Select from list...", None)
-
-        # 3. Fetch from Database
-        if self.db:
-            try:
-                categories = self.db.get_all_categories()
-
-                # --- DEBUG PRINT: Check your console/terminal to see this ---
-                print(f"DEBUG: Categories fetched from DB: {categories}")
-
-                if categories:
-                    self.cmb_category.addItems(categories)
-            except Exception as e:
-                print(f"Error loading categories: {e}")
-
-        # 4. Final UI Adjustments
-        self.cmb_category.setEditable(False)
-
-        # FORCE SELECTION: Ensure the first item ("Select from list...") is selected
-        if self.cmb_category.count() > 0:
-            self.cmb_category.setCurrentIndex(0)
-
-        # Ensure it is enabled (in case it was disabled previously)
-        self.cmb_category.setEnabled(True)
-
-    def handle_category_input_change(self, text):
-        """
-        If text is typed in 'New Category', disable the Dropdown.
-        If 'New Category' is empty, enable the Dropdown.
-        """
-        if not self.cmb_category: return
-
-        if text.strip():
-            # User is typing a new category -> Disable dropdown
-            self.cmb_category.setEnabled(False)
-            self.cmb_category.setCurrentIndex(0)  # Reset dropdown selection
-        else:
-            # User cleared the text -> Enable dropdown
-            self.cmb_category.setEnabled(True)
-
     def save_product(self):
-        """Validates inputs and saves via ManagerDB."""
+        #saves in ManagerDB
         try:
-            # 1. Gather Inputs
+            #getInputs
             name = self.txt_name.text().strip() if self.txt_name else ""
-
-            # [UPDATED LOGIC] Determine which Category to use
-            final_category = ""
-
-            # Check 'New Category' Box first
-            new_cat_text = self.txt_new_category.text().strip() if self.txt_new_category else ""
-
-            # Check Dropdown second
-            dropdown_text = ""
-            if self.cmb_category and self.cmb_category.isEnabled():
-                # We use currentText() but we ignore the placeholder "Select from list..."
-                current = self.cmb_category.currentText()
-                if current != "Select from list...":
-                    dropdown_text = current
-
-            # Decision Matrix
-            if new_cat_text:
-                final_category = new_cat_text
-            elif dropdown_text:
-                final_category = dropdown_text
-
-            # Numbers (QLineEdit)
+            # Read textfrom QLineEdit
+            category = self.txt_category.text().strip() if self.txt_category else ""
             cost_text = self.txt_cost.text().strip() if self.txt_cost else "0"
             price_text = self.txt_price.text().strip() if self.txt_price else "0"
             stock_text = self.txt_stock.text().strip() if self.txt_stock else "0"
-
-            # Expiry (QDateEdit)
             expiry_str = ""
             if self.date_expiry:
                 expiry_str = self.date_expiry.date().toString("yyyy-MM-dd")
-
             # 2. Validation
             if not name:
                 QMessageBox.warning(self, "Validation", "Product Name is required.")
                 return
-
-            if not final_category:
-                QMessageBox.warning(self, "Validation", "Please select an existing category OR type a new one.")
+            if not category:
+                QMessageBox.warning(self, "Validation", "Category is required.")
                 return
-
             try:
                 cost = float(cost_text)
                 price = float(price_text)
@@ -363,33 +239,13 @@ class AddStockDialogController(QDialog):
 
             # 3. Save to Database
             if self.db:
-                # Use final_category here
-                success = self.db.add_product(name, final_category, stock, cost, price, 10, expiry_str)
-
+                success = self.db.add_product(name, category, stock, cost, price, 10, expiry_str) #10 is the threshold for expiry
                 if success:
-                    self.accept()  # Close dialog on success
-                else:
-                    QMessageBox.critical(self, "Database Error", "The database returned an error.")
-            else:
-                QMessageBox.critical(self, "Error", "Database connection missing.")
+                    self.accept()  # Close dialog
 
         except Exception as e:
             print(f"Error in save_product: {e}")
-            QMessageBox.critical(self, "Error", f"An unexpected error occurred:\n{e}")
-
-    # --- Dragging Logic (Unchanged) ---
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.old_pos = event.globalPosition().toPoint()
-
-    def mouseMoveEvent(self, event):
-        if self.old_pos:
-            delta = event.globalPosition().toPoint() - self.old_pos
-            self.move(self.pos() + delta)
-            self.old_pos = event.globalPosition().toPoint()
-
-    def mouseReleaseEvent(self, event):
-        self.old_pos = None
+            QMessageBox.critical(self, "Error", f"guba nasad\n{e}")
 
 ==================================================
 FILE: controllers\audit_controller.py
@@ -544,25 +400,21 @@ class Cart_Controller:
         self.db = db
         self.cart_data = {}
 
-        # --- UI CONFIGURATION ---
+        # ui edits
         self.scroll_area.setVisible(True)
-        # Fix: Hide horizontal scrollbar to prevent covering items
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.scroll_area.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
 
-        # Setup Container
+        #Container
         self.container_widget = QWidget()
         self.container_widget.setStyleSheet("background-color: transparent;")
-
         self.container_layout = QVBoxLayout(self.container_widget)
         self.container_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.container_layout.setContentsMargins(0, 0, 0, 0)
         self.container_layout.setSpacing(8)
-
         self.scroll_area.setWidget(self.container_widget)
         self.scroll_area.setWidgetResizable(True)
-
         # Initial Button State
         self.update_checkout_button_state()
 
@@ -580,7 +432,6 @@ class Cart_Controller:
 
     def update_quantity(self, product_id, change, all_products):
         if product_id not in self.cart_data: return
-
         product = next((p for p in all_products if p.id == product_id), None)
         new_qty = self.cart_data[product_id] + change
 
@@ -592,20 +443,17 @@ class Cart_Controller:
 
         if product_id in self.cart_data:
             self.cart_data[product_id] = new_qty
-
-        self.render_cart(all_products)
+        self.render_cart(all_products) #refesh ang cart every add
 
     def render_cart(self, all_products):
         self.clear_layout(self.container_layout)
-
         subtotal = 0.0
         total_items = 0
         is_empty = len(self.cart_data) == 0
 
-        # Update Button State based on cart content
+        # Update Button State depende sa sulod sa card
         self.update_checkout_button_state()
-
-        # Handle Empty State
+        # empty state
         if hasattr(self.parent, 'lbl_empty_title'):
             self.parent.lbl_empty_title.setVisible(False)
 
@@ -632,7 +480,6 @@ class Cart_Controller:
             row_widget = QWidget()
             try:
                 uic.loadUi(row_ui_path, row_widget)
-
                 row_widget.setMinimumHeight(70)
                 row_widget.setMinimumWidth(0)
 
@@ -650,7 +497,7 @@ class Cart_Controller:
                 self.container_layout.addWidget(row_widget)
 
             except Exception as e:
-                print(f"Error loading row UI: {e}")
+                print(f"dili mag loadd bro: {e}")
 
         self.container_layout.addStretch()
 
@@ -659,14 +506,14 @@ class Cart_Controller:
         self._update_totals(subtotal, vat, grand_total, total_items)
 
     def update_checkout_button_state(self):
-        """Updates the style and enabled state of the checkout button."""
+        #make the process button blue when cart is True
         if not hasattr(self.parent, 'btn_checkout'): return
 
         btn = self.parent.btn_checkout
         is_empty = len(self.cart_data) == 0
 
         if is_empty:
-            # GRAY STATE with INVENTORY-STYLE SHADOW
+            # grey with blue shadow when empty
             btn.setEnabled(False)
             btn.setStyleSheet("""
                 QPushButton {
@@ -679,20 +526,17 @@ class Cart_Controller:
                 }
             """)
 
-            # --- SHADOW LOGIC MATCHING INVENTORY ADD BUTTON ---
+            #shadowssss
             shadow = QGraphicsDropShadowEffect()
             shadow.setBlurRadius(20)  # Standard soft blur
             shadow.setOffset(0, 8)  # Falling shadow offset
-
-            # Using the exact color/alpha often used in modern UI kits like Tailwind (Cyan-500 equivalent)
-            # This matches the "Inventory Add Button" style glow
             color = QColor("#06B6D4")
-            color.setAlpha(100)  # Soft transparency (approx 40%)
+            color.setAlpha(100)  #transparency sa shadow
             shadow.setColor(color)
 
             btn.setGraphicsEffect(shadow)
         else:
-            # ACTIVE STATE (Clean)
+            # ACTIVE STATE
             btn.setEnabled(True)
             btn.setStyleSheet("""
                 QPushButton {
@@ -746,8 +590,8 @@ class Cart_Controller:
 FILE: controllers\cashier_controller.py
 ==================================================
 from PyQt6.QtWidgets import QMainWindow, QLineEdit
-from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor  # <--- Added painting imports
-from PyQt6.QtCore import pyqtSignal, Qt, QEvent  # <--- Added Qt, QEvent
+from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent
 from PyQt6 import uic, QtCore
 import os
 
@@ -763,7 +607,7 @@ class CashierController(QMainWindow):
         self.user = user
         self.db = main_app.db
 
-        # 1. LOAD UI
+        # LOAD UI
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         ui_path = os.path.join(base_path, 'views', 'cashier_window.ui')
 
@@ -773,24 +617,23 @@ class CashierController(QMainWindow):
             print(f"dili ma load ang UI file sa {ui_path}\nbro: {e}")
             return
 
-        # --- Product Grid ---
+        # Product Grid
         if hasattr(self, 'grid_products'):
             self.grid_controller = ProductGrid_Controller(self, self.grid_products, self.db)
             self.grid_controller.refresh_products()
         else:
             print("Error: 'grid_products' widget not found in UI")
 
-        # --- Cart Controller ---
+        # Cart Controller
         if hasattr(self, 'scrollArea_cart'):
             self.cart_controller = Cart_Controller(self, self.scrollArea_cart, self.db)
 
-        # VISUALS
+        # VISUAL
         self.setup_ui()
-        # CONNECTIONS
         self.setup_connections()
 
     def setup_ui(self):
-        """Sets up ang svg icons"""
+        #SVG icons man
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         # Search Icon
@@ -812,28 +655,21 @@ class CashierController(QMainWindow):
                     f'<html><head/><body><p><img src="{cart_icon_path}" width="20" height="20"/>&nbsp;&nbsp;{current_text}</p></body></html>'
                 )
 
-        # --- LOGOUT BUTTON (ADDED THIS) ---
-        # 1. Find the button (checks for 'btn_logout' or 'btn_exit')
-        btn_logout = getattr(self, 'btn_logout', getattr(self, 'btn_exit', None))
+        btn_logout = getattr(self, 'btn_logout')
 
         if btn_logout:
             logout_path = os.path.join(base_path, 'assets', 'side_panel_icons', 'active', 'log-out.svg')
-
             if os.path.exists(logout_path):
-                # 2. Configure it to change color (Grey -> Red) on hover
+                #change color (Grey -> Red) pag naka hover
                 self.setup_text_icon_button(
                     btn_logout,
                     logout_path,
-                    normal_color="#64748B",  # Slate Grey
-                    hover_color="#EF4444"  # Red
+                    normal_color="#64748B", hover_color="#EF4444"
                 )
 
     def setup_text_icon_button(self, btn, icon_path, normal_color, hover_color):
-        """
-        Helper: Configures a button to have NO background, but changes Text and Icon color on hover.
-        """
+        #icon no background but change color when hover
 
-        # A. Paint Icons for both states (Normal & Hover)
         def paint_icon(path, color_hex):
             original = QPixmap(path)
             painted = QPixmap(original.size())
@@ -841,23 +677,20 @@ class CashierController(QMainWindow):
             painter = QPainter(painted)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.drawPixmap(0, 0, original)
-            # Paint the opaque pixels with the new color
+
             painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
             painter.fillRect(painted.rect(), QColor(color_hex))
             painter.end()
             return QIcon(painted)
 
-        # B. Store the colored icons in the button
         btn.icon_normal = paint_icon(icon_path, normal_color)
         btn.icon_hover = paint_icon(icon_path, hover_color)
-
-        # C. Set Initial State
         btn.setIcon(btn.icon_normal)
         btn.setIconSize(QtCore.QSize(20, 20))
         btn.setAttribute(Qt.WidgetAttribute.WA_Hover)
         btn.installEventFilter(self)
 
-        # D. Set Stylesheet (Text Color Change Only)
+        # Text Color Change Only)
         btn.setStyleSheet(f"""
             QPushButton {{
                 text-align: left; 
@@ -880,9 +713,8 @@ class CashierController(QMainWindow):
         """)
 
     def setup_connections(self):
-        """Connects slots."""
 
-        # Product Grid -> Add to Cart
+        # grid to Add to Cart
         if hasattr(self, 'grid_controller') and hasattr(self, 'cart_controller'):
             if hasattr(self.grid_controller, 'product_clicked'):
                 self.grid_controller.product_clicked.connect(self.handle_add_product)
@@ -892,32 +724,28 @@ class CashierController(QMainWindow):
                     lambda text: self.grid_controller.filter_products(text)
                 )
 
-        # 2. Checkout Button
+        #Checkout / process butn
         if hasattr(self, 'btn_checkout'):
             self.btn_checkout.clicked.connect(self.handle_checkout)
 
-        # 3. Exit Button
+        #Exit Button
         if hasattr(self, 'btn_logout'):
-            # Connect to handle_logout instead na close() directly
             self.btn_logout.clicked.connect(self.handle_logout)
             print("DEBUG: Exit button connected successfully.")
-        else:
-            print("WARNING: 'btn_exit' not found in UI. Please check the button name in Qt Designer.")
 
-    # --- EVENT FILTER (Handles Icon Swapping) ---
+    # icon color swap
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.Enter:
-            # Mouse Enter: Switch to Hover Icon (Red)
+            # Hover Icon (Red)
             if hasattr(source, 'icon_hover'):
                 source.setIcon(source.icon_hover)
         elif event.type() == QEvent.Type.Leave:
-            # Mouse Leave: Revert to Normal Icon (Grey)
+            # Normal Icon (Grey)
             if hasattr(source, 'icon_normal'):
                 source.setIcon(source.icon_normal)
-
         return super().eventFilter(source, event)
 
-    # --- ACTIONs cutieeee---
+    #ACTIONs cutieeee
 
     def handle_logout(self):
         """Handles the exit button click."""
@@ -974,22 +802,20 @@ class DashboardController(QtCore.QObject):
 
         self.setup_ui()
         self.refresh_data()
-        self.start_clock()  # <--- Start the clock immediately
+        self.start_clock()  #Start clock
 
     def setup_ui(self):
-        # --- 1. GET USER NAME ---
-        # We fetch this once during setup so we don't query it every second
+        # GET USER
         if hasattr(self.main_controller, 'user'):
             current_user = getattr(self.main_controller, 'user', None)
             if current_user:
-                # Handle if user is an Object (user.name) or Dictionary (user['name'])
+                # Handle if user is an Obj (user.name) or dic(user['name'])
                 if hasattr(current_user, 'name'):
                     self.current_user_name = current_user.name
                 elif isinstance(current_user, dict):
                     self.current_user_name = current_user.get('name', 'Manager')
 
-        # --- 2. EXISTING UI EFFECTS ---
-        # Apply Hover Effect (Floating + Shadow) for cards
+        # Apply Hover Effectfor cards
         if hasattr(self.main_controller, 'card_revenue'):
             apply_hover_effect(self.main_controller.card_revenue)
         if hasattr(self.main_controller, 'card_stock'):
@@ -997,7 +823,6 @@ class DashboardController(QtCore.QObject):
         if hasattr(self.main_controller, 'card_expiring'):
             apply_hover_effect(self.main_controller.card_expiring)
 
-        # Static shadow for the table frame (no floating)
         if hasattr(self.main_controller, 'frame_table'):
             add_drop_shadow(self.main_controller.frame_table)
 
@@ -1009,26 +834,23 @@ class DashboardController(QtCore.QObject):
         if hasattr(self.main_controller, 'lbl_icon_3'):
             set_icon(self.main_controller.lbl_icon_3, 'history.svg', size=24)  # Expiring
 
-    # --- NEW CLOCK FUNCTIONS ---
+    #CLOCK FUNCT-
     def start_clock(self):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_dashboard_time)
-        self.timer.start(1000)  # Update every 1 second
-        self.update_dashboard_time()  # Run immediately
+        self.timer.start(1000)  # Update every 1 sec
+        self.update_dashboard_time()  # Run immed
 
     def update_dashboard_time(self):
-        # Get current time
+        # Get curr time
         current_time = QDateTime.currentDateTime()
-
-        # Format: Month Day, Year | Hour:Minute:Second AM/PM
-        # Example: December 17, 2025 | 09:30:45 AM
         date_display = current_time.toString("MMMM d, yyyy")
         time_display = current_time.toString("hh:mm:ss AP")
 
         # Combine Welcome Message + Date/Time
         final_text = f"Welcome back, {self.current_user_name}\n{date_display} | {time_display}"
 
-        # Update the label
+        # Update label
         if hasattr(self.main_controller, 'label_dash_sub'):
             self.main_controller.label_dash_sub.setText(final_text)
 
@@ -1049,16 +871,16 @@ class DashboardController(QtCore.QObject):
     def populate_sales_list(self):
         layout = self.main_controller.layout_sales_list
 
-        # 1. Clear existing items
+        #Clear existing items
         while layout.count() > 0:
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
 
-        # 2. Fetch Data
+        #Fetch Data
         sales = self.db.get_recent_sales()
 
-        # 3. Load UI
+        #Load UI
         ui_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             'views', 'item_sale.ui'
@@ -1070,23 +892,23 @@ class DashboardController(QtCore.QObject):
         for sale in sales:
             try:
                 widget = uic.loadUi(ui_path)
-
-                # 1. TOTAL ITEMS (Matches 'items_count' from DB)
+                #FROM DB lahat
+                # TOTAL ITEMS 'items_count'
                 if hasattr(widget, 'lbl_items'):
                     count = sale.get('items_count', 0)
                     widget.lbl_items.setText(f"{count} Items")
 
-                # 2. TOTAL AMOUNT (Matches 'total_amount' from DB)
+                # TOTAL AMOUNT 'total_amount'
                 if hasattr(widget, 'lbl_total'):
                     amount = float(sale.get('total_amount', 0))
                     widget.lbl_total.setText(f"₱{amount:,.2f}")
 
-                # 3. CASHIER NAME (Matches 'cashier_name' from DB)
+                # CASHIER NAME 'cashier_name'
                 if hasattr(widget, 'lbl_name'):
                     cashier = sale.get('cashier_name', 'N/A')
                     widget.lbl_name.setText(cashier)
 
-                # 4. TIME
+                # TIME
                 if hasattr(widget, 'lbl_time'):
                     time_val = sale.get('sale_timestamp')
                     if time_val:
@@ -1234,19 +1056,10 @@ class EditProductDialogController(QDialog):
 ==================================================
 FILE: controllers\inventory_controller.py
 ==================================================
-from PyQt6 import QtWidgets, uic, QtCore
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6 import uic
 import os
-
-# Utils
-try:
-    from utils.ui_helper import Overlay, add_drop_shadow, set_icon
-    from utils.toast_notification import show_toast
-except ImportError:
-    pass
-
-# Import Sub-Controllers
+from utils.ui_helper import Overlay, add_drop_shadow, set_icon
+from utils.toast_notification import show_toast
 from controllers.add_stock_controller import AddStockDialogController
 from controllers.edit_product_controller import EditProductDialogController
 from controllers.audit_controller import AuditWindowController
@@ -1262,40 +1075,37 @@ class InventoryController:
 
         self.setup_ui()
         self.setup_connections()
-
         # Start with All Items active
         if hasattr(self.view, 'btn_filter_all'):
             self.set_active_filter(self.view.btn_filter_all)
-
         # Load data
         self.refresh_data("all")
 
     def setup_ui(self):
-        """Configure UI elements."""
 
-        # Setup Add Stock Button
+        #Add Stock Button
         if hasattr(self.view, 'btn_add_stock'):
             add_drop_shadow(self.view.btn_add_stock, color_alpha=100, hex_color="#06B6D4")
             set_icon(self.view.btn_add_stock, 'plus.svg', size=18)
             self.view.btn_add_stock.setText(" Add Stock")
 
-        # Setup View Logs Button
+        #View Logs Button
         if hasattr(self.view, 'btn_view_logs'):
             set_icon(self.view.btn_view_logs, 'clipboard.svg', size=18)
             self.view.btn_view_logs.setText(" Audit Logs")
 
-        # Setup Filter Button Styles
+        #hardcode Filter Button
         style_active = """
-            QPushButton {
-                background-color: #06B6D4; color: white; border: none; border-radius: 18px; font-weight: bold; font-size: 13px;
-            }
-        """
+                QPushButton {
+                    background-color: #06B6D4; color: white; border: none; border-radius: 18px; font-weight: bold; font-size: 13px;
+                }
+            """
         style_default = """
-            QPushButton {
-                background-color: white; color: #64748B; border: 1px solid #E2E8F0; border-radius: 18px; font-weight: 600; font-size: 13px;
-            }
-            QPushButton:hover { background-color: #F8FAFC; }
-        """
+                QPushButton {
+                    background-color: white; color: #64748B; border: 1px solid #E2E8F0; border-radius: 18px; font-weight: 600; font-size: 13px;
+                }
+                QPushButton:hover { background-color: #F8FAFC; }
+            """
 
         buttons = ['btn_filter_all', 'btn_filter_low', 'btn_filter_out']
         for btn_name in buttons:
@@ -1328,7 +1138,6 @@ class InventoryController:
                 lambda: [self.set_active_filter(self.view.btn_filter_out), self.refresh_data("out")])
 
         # Search Bar Connection
-        # Note: Updated name to 'lineEdit_search' based on your latest UI file
         if hasattr(self.view, 'lineEdit_search'):
             self.view.lineEdit_search.textChanged.connect(self.handle_search)
 
@@ -1342,7 +1151,7 @@ class InventoryController:
             button.setStyleSheet(button.active_style)
 
     def get_current_username(self):
-        """Safely retrieves the name of the currently logged-in user."""
+        """name of the currently logged-in user."""
         if not hasattr(self.main_controller, 'user') or not self.main_controller.user:
             return "System Admin"
         user_data = self.main_controller.user
@@ -1351,7 +1160,7 @@ class InventoryController:
         return getattr(user_data, 'name', 'Unknown User')
 
     def refresh_data(self, filter_type="all"):
-        """Refreshes the inventory list based on filters AND search text."""
+        #Refreshes the inventory list based on filters AND search text."""
         if not hasattr(self.view, 'layout_inventory_list'):
             return
 
@@ -1362,11 +1171,10 @@ class InventoryController:
             item = layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-
-        # === FETCH DATA ===
+        #fetch data
         products = self.db.get_inventory_items()
 
-        # === GET SEARCH TEXT ===
+        # fetch text
         search_text = ""
         if hasattr(self.view, 'lineEdit_search'):
             search_text = self.view.lineEdit_search.text().lower().strip()
@@ -1380,12 +1188,6 @@ class InventoryController:
                 cat_match = search_text in p.category.lower()
                 if not (name_match or cat_match):
                     continue
-
-                    # 2. Category/Status Filter
-            # (Note: In a real app, you might track 'current_filter' state rather than passing string)
-            # But for now, we rely on the button click passing the string,
-            # or if called from search, we default to "all" (or we should track the active state).
-            # *Improvement*: You might want to save self.current_filter_state = "all" in init
 
             if filter_type == "low":
                 if not (p.stock <= p.threshold and p.stock > 0): continue
@@ -1512,9 +1314,9 @@ class InventoryController:
 ==================================================
 FILE: controllers\login_controller.py
 ==================================================
-from PyQt6 import QtWidgets, uic, QtCore, QtGui
+from PyQt6 import  uic, QtCore
 from PyQt6.QtWidgets import QMainWindow, QLineEdit, QMessageBox, QApplication
-from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import pyqtSignal, QTimer
 from utils.ui_helper import add_drop_shadow, center_window
 import os
@@ -1621,7 +1423,7 @@ class LoginController(QMainWindow):
 
     def handle_forgot_password(self):
         QMessageBox.information(self, "Reset Password",
-                                "Please contact your System Administrator to reset your password.")
+                                "Please contact your Manager to reset your password.")
 
     def handle_login(self):
         username = self.input_user.text().strip()
@@ -1680,7 +1482,6 @@ class LoginController(QMainWindow):
 ==================================================
 FILE: controllers\main_controller.py
 ==================================================
-# controllers/main_controller.py
 from PyQt6 import QtWidgets, uic, QtGui, QtCore
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtGui import QIcon
@@ -1694,7 +1495,6 @@ from controllers.inventory_controller import InventoryController
 from controllers.perishables_controller import PerishablesController
 from controllers.reports_controller import ReportsController
 from controllers.users_controller import UsersController
-from models.database_manager import DatabaseManager
 from utils.ui_helper import center_window
 
 
@@ -1703,22 +1503,15 @@ class MainController(QMainWindow):
 
     def __init__(self, db_manager, user_data=None):
         super().__init__()
-
         self.setWindowOpacity(0.0)
-
         self.db = db_manager
         self.user = user_data  # Store the logged-in user
-
         self.load_main_ui()
         self.setup_sidebar()
+        self.update_user_display()        # Display the user name
+        self.init_pages()         # Initialize pages
 
-        # Display the user name immediately
-        self.update_user_display()
-
-        # Initialize pages
-        self.init_pages()
-
-        # Connect Navigation
+        # Connect Navig
         if hasattr(self, 'btn_nav_dashboard'):
             self.btn_nav_dashboard.clicked.connect(lambda: self.switch_page(0))
         if hasattr(self, 'btn_nav_inventory'):
@@ -1729,18 +1522,17 @@ class MainController(QMainWindow):
             self.btn_nav_reports.clicked.connect(lambda: self.switch_page(3))
         if hasattr(self, 'btn_nav_users'):
             self.btn_nav_users.clicked.connect(lambda: self.switch_page(4))
-
         if hasattr(self, 'btn_logout'):
             self.btn_logout.clicked.connect(self.handle_logout)
 
-        # Force size for the Manager Dashboard
+        #force sizw
         self.resize(1200, 700)
 
         center_window(self)
         self.fade_in()
 
     def update_user_display(self):
-        """Updates the sidebar label with the current user's name and role."""
+        #shows the logged in user
         if hasattr(self, 'lbl_user'):
             if self.user:
                 # Handle both dictionary and object access
@@ -1758,6 +1550,7 @@ class MainController(QMainWindow):
             else:
                 self.lbl_user.setText("System Admin")
 
+    #fade in effects
     def fade_in(self):
         self.anim = QtCore.QPropertyAnimation(self, b"windowOpacity")
         self.anim.setDuration(600)
@@ -1783,7 +1576,6 @@ class MainController(QMainWindow):
         self.icon_folder_normal = os.path.join(base_path, 'assets', 'side_panel_icons')
         self.icon_folder_active = os.path.join(self.icon_folder_normal, 'active')
 
-        # --- [NEW] Load Logo Image ---
         if hasattr(self, 'logo_image'):
             logo_path = os.path.join(base_path, 'assets', 'logo.png')
             if os.path.exists(logo_path):
@@ -1796,7 +1588,6 @@ class MainController(QMainWindow):
                 self.logo_image.setPixmap(scaled_pixmap)
             else:
                 print(f"Warning: Logo file not found at {logo_path}")
-        # -----------------------------
 
         self.sidebar_buttons = []
         if hasattr(self, 'btn_nav_dashboard'): self.sidebar_buttons.append((self.btn_nav_dashboard, "dashboard.svg"))
@@ -1842,6 +1633,7 @@ class MainController(QMainWindow):
             btn.setIcon(QIcon(path))
             btn.setIconSize(QtCore.QSize(20, 20))
 
+    #Side bar hover effsss
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.Type.Enter:
             if hasattr(source, 'path_active'):
@@ -1878,19 +1670,19 @@ class MainController(QMainWindow):
         # 1. Dashboard
         self.dashboard_controller = DashboardController(self.page_dashboard, self)
 
-        # 2. Inventory (CORRECT: inventory_window.ui)
+        # 2. Inventory
         self.page_inventory = self.load_and_add_page('inventory_window.ui')
         self.inventory_controller = InventoryController(self.page_inventory, self)
 
-        # 3. Perishables (CORRECT: perishables_window.ui)
+        # 3. Perishables
         self.page_perishables = self.load_and_add_page('perishables_window.ui')
         self.perishables_controller = PerishablesController(self.page_perishables, self)
 
-        # 4. Reports (CORRECT: reports_window.ui)
+        # 4. Reports
         self.page_reports = self.load_and_add_page('reports_window.ui')
         self.reports_controller = ReportsController(self.page_reports, self)
 
-        # 5. Users (CORRECT: user_accounts_window.ui)
+        # 5. Users
         self.page_users = self.load_and_add_page('user_accounts_window.ui')
         self.users_controller = UsersController(self.page_users, self)
 
@@ -2156,48 +1948,28 @@ class ReportsController(QtCore.QObject):
         self.view = view
         self.main_controller = main_controller
         self.db = ManagerDB(main_controller.db) #access to self.db.get_top_products() AND self.db.main_db.get_connection()
-
         self.setup_ui()
         self.refresh_data()
 
-    def apply_modern_scrollbar_style(self, scroll_area):
-        qss = """
-        QScrollArea { border: none; background-color: transparent; }
-        QScrollBar:vertical { border: none; background: transparent; width: 8px; }
-        QScrollBar::groove:vertical { border: none; background: transparent; width: 0px; }
-        QScrollBar::handle:vertical { background-color: #94A3B8; border-radius: 4px; min-height: 20px; }
-        QScrollBar::handle:vertical:hover { background-color: #64748B; }
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
-        """
-        scroll_area.setStyleSheet(scroll_area.styleSheet() + qss)
 
     def setup_ui(self):
         #Hover Effect
         if hasattr(self.view, 'card_alert_stock'): apply_hover_effect(self.view.card_alert_stock)
         if hasattr(self.view, 'card_alert_expiry'): apply_hover_effect(self.view.card_alert_expiry)
         if hasattr(self.view, 'card_financial'): apply_hover_effect(self.view.card_financial)
-
-        #Scrollbar Style
-        if hasattr(self.view, 'scrollArea_top_selling'):
-            self.apply_modern_scrollbar_style(self.view.scrollArea_top_selling)
-
         #Icons
         if hasattr(self.view, 'icon_stock'): set_icon(self.view.icon_stock, 'alert-triangle.svg', size=24)
         if hasattr(self.view, 'icon_exp'): set_icon(self.view.icon_exp, 'history.svg', size=24)
-
-        # [NEW] Connect the Generate Report Button
         if hasattr(self.view, 'generateReportBtn'):
             self.view.generateReportBtn.clicked.connect(self.open_report_dialog)
 
-    # [NEW] Method to open the dialog
+    #open the dialog
     def open_report_dialog(self):
         try:
             overlay = Overlay(self.main_controller)
             overlay.show() #blur effect again
-            # Pass self.view as parent so the dialog centers on the reports window
             dialog = ReportDialogController(parent=self.view)
             dialog.exec()
-
             overlay.close()
         except Exception as e:
             print(f"Error opening report dialog: {e}")
@@ -2225,9 +1997,8 @@ class ReportsController(QtCore.QObject):
         if hasattr(self.view, 'lbl_val_cost'): self.view.lbl_val_cost.setText(f"₱{estimated_cost:,.2f}")
         if hasattr(self.view, 'lbl_val_profit'): self.view.lbl_val_profit.setText(f"₱{estimated_profit:,.2f}")
 
-        # --- 2. Alerts (Using ManagerDB Method) ---
+        # Alerts
         try:
-            # Assuming get_dashboard_stats exists in ManagerDB (db_manager.py)
             if hasattr(self.db, 'get_dashboard_stats'):
                 stats = self.db.get_dashboard_stats()
                 if hasattr(self.view, 'lbl_val_alert_stock'):
@@ -2237,7 +2008,6 @@ class ReportsController(QtCore.QObject):
         except Exception as e:
             print(f"Error fetching stats: {e}")
 
-        # --- 3. Top Selling Items ---
         self.populate_top_selling()
 
     def populate_top_selling(self):
@@ -2249,12 +2019,11 @@ class ReportsController(QtCore.QObject):
             item = layout.takeAt(0)
             if item.widget(): item.widget().deleteLater()
 
-        # Fetch Items using ManagerDB method
+        # Fetch Items using
         items = []
         try:
-            # This calls the method in db_manager.py
             results = self.db.get_top_products(limit=5)
-            # Convert dictionary result to tuple list [(name, qty), ...]
+            # Convert dictionaryto tuple[(name, qty), ...]
             items = [(row['name'], row['total_qty']) for row in results]
         except Exception as e:
             print(f"Error loading top products: {e}")
@@ -2264,7 +2033,7 @@ class ReportsController(QtCore.QObject):
 
         max_sold = max(count for _, count in items)
 
-        # Load Row UI
+        # Load Row
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         ui_path = os.path.join(base_path, 'views', 'item_report.ui')
 
@@ -2276,7 +2045,6 @@ class ReportsController(QtCore.QObject):
 
                 if hasattr(row_widget, 'lbl_name'): row_widget.lbl_name.setText(name)
                 if hasattr(row_widget, 'lbl_count'): row_widget.lbl_count.setText(f"{count} sold")
-
                 if hasattr(row_widget, 'progress_bar'):
                     percent = int((count / max_sold) * 100) if max_sold > 0 else 0
                     row_widget.progress_bar.setValue(percent)
@@ -2285,7 +2053,6 @@ class ReportsController(QtCore.QObject):
             except Exception as e:
                 print(f"Error rendering report row: {e}")
 
-        # Add Spacer at bottom
         spacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum,
                                        QtWidgets.QSizePolicy.Policy.Expanding)
         layout.addItem(spacer)
@@ -2306,11 +2073,9 @@ class ReportDialogController(QDialog):
         super().__init__(parent)
         loadUi("views/report_dialog.ui", self)
 
-        # 1. Initialize Database Logic
+        #Database Logic
         self.main_db = DatabaseManager()
         self.db = self.main_db.manager_db
-
-        # 2. Setup UI (Styles are now loaded directly from report_dialog.ui)
         self.setup_ui()
 
     def setup_ui(self):
@@ -2318,8 +2083,6 @@ class ReportDialogController(QDialog):
         now = datetime.now()
         self.startDateEdit.setDate(QDate(now.year, now.month, 1))
         self.endDateEdit.setDate(QDate.currentDate())
-
-        # [NEW] Add "All Reports" to the dropdown
         self.reportTypeCombo.addItem("All Reports")
 
         self.exportBtn.clicked.connect(self.handle_export)
@@ -2330,20 +2093,19 @@ class ReportDialogController(QDialog):
         start = self.startDateEdit.date().toString("yyyy-MM-dd")
         end = self.endDateEdit.date().toString("yyyy-MM-dd")
 
-        # 1. Determine Default Filename
+        # 1. DetermineFilename
         filename = f"{rpt_type.replace(' ', '_')}_{end}.pdf"
 
-        # 2. Ask Where to Save (Before doing any DB work)
+        # 2. Ask Where to Save
         file_path, _ = QFileDialog.getSaveFileName(self, "Save Report", filename, "PDF Files (*.pdf)")
 
         if not file_path:
-            return  # User cancelled
+            return  # User cancel
 
         try:
-            # Initialize the Generator with the chosen path
             gen = PDFReportGenerator(file_path)
 
-            # --- OPTION A: GENERATE EVERYTHING ---
+            #GENERATE EVERYTHING
             if rpt_type == "All Reports":
                 # 1. Sales
                 gen.add_sales_section(self.db.get_sales_report_data(start, end), start, end)
@@ -2354,7 +2116,7 @@ class ReportDialogController(QDialog):
                 # 4. Audit Logs
                 gen.add_audit_section(self.db.get_audit_log_data(start, end), start, end)
 
-            # --- OPTION B: GENERATE INDIVIDUAL REPORTS ---
+            #GENERATE INDIVIDUAL REPORTS
             elif rpt_type == "Sales Report":
                 gen.add_sales_section(self.db.get_sales_report_data(start, end), start, end)
 
@@ -2367,7 +2129,7 @@ class ReportDialogController(QDialog):
             elif rpt_type == "Audit Logs":
                 gen.add_audit_section(self.db.get_audit_log_data(start, end), start, end)
 
-            # 3. Finalize and Write File
+            #Finalize and Write File
             if gen.build():
                 QMessageBox.information(self, "Success", "Report Generated Successfully!")
                 self.close()
@@ -2507,9 +2269,6 @@ class UsersController:
         msg_box.setText("Are you sure you want to delete this user?")
         msg_box.setIcon(QtWidgets.QMessageBox.Icon.Question)
         msg_box.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
-
-        # 2. Apply a specific style to fix the visibility issue
-        # We force a dark background and ensure buttons are visible
         msg_box.setStyleSheet("""
             QMessageBox {
                 background-color: #1F2937;  /* Dark Grey Background */
@@ -2532,7 +2291,6 @@ class UsersController:
             }
         """)
 
-        # 3. Show the dialog
         overlay = Overlay(self.main_controller)
         overlay.show()
         reply = msg_box.exec()
@@ -2557,8 +2315,6 @@ FILE: models\database_manager.py
 ==================================================
 import mysql.connector
 from mysql.connector import Error
-
-# Import Entity for Auth
 from models.entities import User
 from models.db_cashier import CashierDB
 from models.db_manager import ManagerDB
@@ -2566,7 +2322,6 @@ from models.db_manager import ManagerDB
 
 class DatabaseManager:
     def __init__(self):
-        # Configuration
         self.config = {
             'host': 'localhost',
             'user': 'root',
@@ -2574,31 +2329,29 @@ class DatabaseManager:
             'database': 'pos_system'
         }
 
-        # Initialize sub-managers, passing 'self' to give them access to get_connection()
         self.cashier_db = CashierDB(self)
         self.manager_db = ManagerDB(self)
 
     def get_connection(self):
-        """Centralized connection factory used by sub-managers."""
+        #Centralized connection
         try:
             return mysql.connector.connect(**self.config)
         except Error as e:
             print(f"Error connecting to MySQL: {e}")
             return None
 
-    # ================= CORE AUTH =================
     def authenticate_user(self, username, password):
         conn = self.get_connection()
         user_obj = None
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor(dictionary=True)
-                # In production, use hashed passwords!
+                # In production,
                 query = "SELECT id, name, role FROM users WHERE name = %s AND password = %s"
                 cursor.execute(query, (username, password))
                 result = cursor.fetchone()
 
-                # --- FIX: Return User Object ---
+                # Return User Obj
                 if result:
                     user_obj = User(result['id'], result['name'], result['role'])
             except Error as e:
@@ -2607,18 +2360,14 @@ class DatabaseManager:
                 conn.close()
         return user_obj
 
-    # =========================================================
-    # PROXY METHODS - These ensure Controllers don't break
-    # =========================================================
-
-    # --- Cashier Routes ---
+    #Cashier
     def get_all_products(self):
         return self.cashier_db.get_all_products()
 
     def process_transaction(self, cart, total, cashier):
         return self.cashier_db.process_transaction(cart, total, cashier)
 
-    # --- Manager/Inventory Routes ---
+    # --- Manager/Inventory
     def get_all_users(self):
         return self.manager_db.get_all_users()
 
@@ -2631,27 +2380,22 @@ class DatabaseManager:
     def get_inventory_items(self):
         return self.manager_db.get_inventory_items()
 
-    # Note: These methods assume ManagerDB has them. If not, add them to ManagerDB.
-    # The error logs suggest ManagerDB handles product logic.
     def add_product(self, name, cat, stk, cost, price, thres, exp):
-        # Assuming this method exists in ManagerDB (db_manager.py)
         if hasattr(self.manager_db, 'add_product'):
             return self.manager_db.add_product(name, cat, stk, cost, price, thres, exp)
         return False
 
     def update_product(self, pid, name, cat, stk, cost, price, thres, exp):
-        # Assuming this method exists in ManagerDB
         if hasattr(self.manager_db, 'update_product'):
             return self.manager_db.update_product(pid, name, cat, stk, cost, price, thres, exp)
         return False
 
     def delete_product(self, pid):
-        # Assuming this method exists in ManagerDB
         if hasattr(self.manager_db, 'delete_product'):
             return self.manager_db.delete_product(pid)
         return False
 
-    # --- Dashboard Routes ---
+    # Dashboard ways
     def get_dashboard_stats(self):
         return self.manager_db.get_dashboard_stats()
 
@@ -2663,8 +2407,6 @@ class DatabaseManager:
 
     def get_top_products(self, limit=5):
         return self.manager_db.get_top_products(limit)
-
-    # === AUDIT LOG METHODS ===
 
     def get_audit_logs(self):
         logs = []
@@ -2708,10 +2450,10 @@ from models.entities import Product
 
 class CashierDB:
     def __init__(self, db_manager):
-        self.main_db = db_manager # Access to get_connection()
+        self.main_db = db_manager #get_connection()
 
     def get_all_products(self):
-        """Used by CASHIER: Returns Product objects."""
+        #return prod objs
         products = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -2725,7 +2467,7 @@ class CashierDB:
                 """
                 cursor.execute(query)
                 for row in cursor.fetchall():
-                    # Create Product objects (Safe for CashierController)
+                    # Create Product objects (CashierController)
                     p = Product(
                         id=row['id'],
                         name=row['name'],
@@ -2747,12 +2489,10 @@ class CashierDB:
         conn = self.main_db.get_connection()
         if not conn or not conn.is_connected():
             return False
-
         try:
             conn.start_transaction()
             cursor = conn.cursor()
-
-            # 1. Insert into sales
+            #Insert into sales
             items_count = sum(cart_dict.values())
             insert_sale = """
                 INSERT INTO sales (total_amount, items_count, cashier_name, sale_timestamp)
@@ -2761,18 +2501,16 @@ class CashierDB:
             cursor.execute(insert_sale, (total_amount, items_count, cashier_name))
             sale_id = cursor.lastrowid
 
-            # 2. Insert items and update stock
+            #Insert items and update stock
             for pid, qty in cart_dict.items():
                 cursor.execute("SELECT selling_price FROM inventory WHERE id = %s", (pid,))
                 res = cursor.fetchone()
                 price = res[0] if res else 0.0
-
                 insert_item = """
                     INSERT INTO sale_items (sale_id, product_id, quantity, price)
                     VALUES (%s, %s, %s, %s)
                 """
                 cursor.execute(insert_item, (sale_id, pid, qty, price))
-
                 update_stock = "UPDATE inventory SET stock = stock - %s WHERE id = %s"
                 cursor.execute(update_stock, (qty, pid))
 
@@ -2788,16 +2526,15 @@ class CashierDB:
 ==================================================
 FILE: models\db_manager.py
 ==================================================
-# models/db_manager.py
 from mysql.connector import Error
 from models.entities import User, InventoryItem, DashboardStats
 
-
+#Manager's side DB
 class ManagerDB:
     def __init__(self, db_manager):
         self.main_db = db_manager  # Access to get_connection()
 
-    # ================= USER MANAGEMENT =================
+    # manage users
     def get_all_users(self):
         users = []
         conn = self.main_db.get_connection()
@@ -2834,31 +2571,27 @@ class ManagerDB:
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor()
-
-                # --- SAFETY CHECK: Prevent deleting the last Manager ---
+                # prevent deleting last manager's profile
                 cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
                 row = cursor.fetchone()
-
                 if row and row[0] == 'Manager':
                     cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'Manager'")
                     manager_count = cursor.fetchone()[0]
-
                     if manager_count <= 1:
-                        print("Error: Cannot delete the last Manager account.")
+                        print("Cannot delete the last Manager account.")
                         return False
-                # -------------------------------------------------------
 
                 cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
                 conn.commit()
                 return True
             except Error as e:
-                print(f"Error deleting user: {e}")
+                print(f"cant delete user: {e}")
                 return False
             finally:
                 conn.close()
         return False
 
-    # ================= INVENTORY MANAGEMENT =================
+    # manager inventory
     def get_inventory_items(self):
         items = []
         conn = self.main_db.get_connection()
@@ -2886,15 +2619,13 @@ class ManagerDB:
         return items
 
     def get_expiring_products_in_stock(self, days_threshold=30):
-        """
-        Fetches items that have stock > 0 AND are expiring within 'days_threshold' (or expired).
-        """
+        #get items that have more than 1 stock and are expiring
         items = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor(dictionary=True)
-                # SQL LOGIC:
+                # explanation oh
                 # 1. stock > 0: Only available items (Perishables view Requirement)
                 # 2. expiry_date IS NOT NULL: Must have an expiry
                 # 3. expiry_date <= ...: Date is today or in the past (expired) OR within next 30 days
@@ -2990,7 +2721,7 @@ class ManagerDB:
         return False
 
     def get_all_categories(self):
-        """Fetches unique categories for the dropdown to prevent duplicates."""
+      #Get unique category / same name same spelled category capital or not
         categories = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -3007,7 +2738,7 @@ class ManagerDB:
                 conn.close()
         return categories
 
-    # ================= DASHBOARD & ANALYTICS =================
+    # analyticss
     def get_dashboard_stats(self):
         conn = self.main_db.get_connection()
         stats = DashboardStats(0, 0, 0)
@@ -3016,12 +2747,12 @@ class ManagerDB:
             try:
                 cursor = conn.cursor(dictionary=True)
 
-                # 1. Revenue
+                #Revenue
                 cursor.execute("SELECT SUM(total_amount) as rev FROM sales WHERE DATE(sale_timestamp) = CURDATE()")
                 res_rev = cursor.fetchone()
                 revenue = res_rev['rev'] if res_rev and res_rev['rev'] else 0.0
 
-                # 2. Low Stock (UPDATED)
+                #Low Stock
                 # Count items where stock <= threshold BUT ignore items with 0 stock
                 cursor.execute("""
                     SELECT COUNT(*) as cnt 
@@ -3031,8 +2762,8 @@ class ManagerDB:
                 """)
                 low_stock = cursor.fetchone()['cnt']
 
-                # 3. Expiring Soon
-                # Also ignores items with 0 stock
+                # Expiring Soon
+                # gnores items with 0 stock
                 cursor.execute("""
                                SELECT COUNT(*) as cnt
                                FROM inventory
@@ -3049,17 +2780,11 @@ class ManagerDB:
         return stats
 
     def get_recent_sales(self, limit=10):
-        """
-        Fetches RECENT TRANSACTIONS from the sales table.
-        Returns: total_amount, items_count, cashier_name, sale_timestamp
-        """
         sales = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor(dictionary=True)
-
-                # FIX: Select directly from 'sales' table to get the Receipt Summary
                 query = """
                     SELECT 
                         total_amount, 
@@ -3101,10 +2826,8 @@ class ManagerDB:
         return items
 
 
-#================= REPORTING METHODS =================
-
     def get_sales_report_data(self, start_date, end_date):
-        """Fetches sales between dates for the report."""
+        #get date for reports
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -3131,7 +2854,7 @@ class ManagerDB:
         return data
 
     def get_inventory_valuation_data(self):
-        """Calculates total value of stock."""
+        #calculate total value sa stock
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -3139,7 +2862,7 @@ class ManagerDB:
                 cursor = conn.cursor(dictionary=True)
                 query = """
                 SELECT 
-                    id, name, category, stock, selling_price,
+                    id, name, category, stock, cost_price, selling_price,
                     (stock * selling_price) as total_value
                 FROM inventory
                 ORDER BY category, name
@@ -3154,7 +2877,7 @@ class ManagerDB:
         return data
 
     def get_low_stock_data(self):
-        """Fetches items below threshold."""
+        #get items below threshold (always <=10)
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -3176,7 +2899,6 @@ class ManagerDB:
         return data
 
     def get_audit_log_data(self, start_date, end_date):
-        """Fetches audit logs between dates."""
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -3248,12 +2970,21 @@ FILE: models\__init__.py
 ==================================================
 FILE: utils\pdf_generator.py
 ==================================================
+import os
+from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from datetime import datetime
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, \
+    Image as PlatypusImage
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.linecharts import HorizontalLineChart
+from reportlab.graphics.charts.barcharts import VerticalBarChart, HorizontalBarChart
+from reportlab.graphics.charts.piecharts import Pie
+from reportlab.graphics.charts.legends import Legend
+# --- NEW IMPORT REQUIRED FOR DOTS ---
+from reportlab.graphics.widgets.markers import makeMarker
 
 
 class PDFReportGenerator:
@@ -3269,7 +3000,6 @@ class PDFReportGenerator:
         self.styles = getSampleStyleSheet()
 
         # --- Custom Professional Styles ---
-        # Main Title (Large, Dark Blue)
         self.styles.add(ParagraphStyle(
             name='ReportTitle',
             parent=self.styles['Heading1'],
@@ -3279,7 +3009,6 @@ class PDFReportGenerator:
             spaceAfter=5
         ))
 
-        # Section Headers (Medium, Slate Grey)
         self.styles.add(ParagraphStyle(
             name='SectionHeader',
             parent=self.styles['Heading2'],
@@ -3289,7 +3018,6 @@ class PDFReportGenerator:
             spaceAfter=10,
         ))
 
-        # [FIX] Renamed from 'BodyText' to 'ReportBody' to avoid conflict
         self.styles.add(ParagraphStyle(
             name='ReportBody',
             parent=self.styles['Normal'],
@@ -3298,78 +3026,79 @@ class PDFReportGenerator:
             leading=14
         ))
 
-        # KPI/Card Label (Small, Uppercase)
         self.styles.add(ParagraphStyle(
             name='CardLabel',
             parent=self.styles['Normal'],
             fontSize=8,
             textColor=colors.HexColor("#64748B"),
-            alignment=1  # Center
+            alignment=1
         ))
 
-        # KPI/Card Value (Large, Bold)
         self.styles.add(ParagraphStyle(
             name='CardValue',
             parent=self.styles['Normal'],
             fontSize=14,
             textColor=colors.HexColor("#0F172A"),
-            alignment=1,  # Center
+            alignment=1,
             fontName='Helvetica-Bold'
         ))
 
-    def _add_header_info(self, title, start_date, end_date):
-        """Creates a professional 2-column header block"""
+    def _header_footer(self, canvas, doc):
+        """Draws the Header and Footer on every page."""
+        canvas.saveState()
+
+        # --- HEADER ---
+        canvas.setFont('Helvetica-Bold', 12)
+        canvas.setFillColor(colors.HexColor("#1E3A8A"))
+        canvas.drawString(40, A4[1] - 35, "ShelfSync POS System")
+
+        # Divider Line
+        canvas.setStrokeColor(colors.HexColor("#E2E8F0"))
+        canvas.setLineWidth(1)
+        canvas.line(40, A4[1] - 45, A4[0] - 40, A4[1] - 45)
+
+        # --- FOOTER ---
+        canvas.setFont('Helvetica', 8)
+        canvas.setFillColor(colors.HexColor("#64748B"))
+
+        # Left: Generation Time
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        canvas.drawString(40, 30, f"Generated: {timestamp}")
 
-        # Left Side: Report Title & Company Name
+        # Right: Page Number
+        page_num = canvas.getPageNumber()
+        text = "Page %s" % page_num
+        canvas.drawRightString(A4[0] - 40, 30, text)
+
+        canvas.restoreState()
+
+    def _add_report_metadata(self, title, start_date, end_date):
         title_para = Paragraph(title, self.styles['ReportTitle'])
-        # [FIX] Updated style reference
-        company_para = Paragraph("<b>ShelfSync POS System</b>", self.styles['ReportBody'])
+        period_text = f"<b>Reporting Period:</b> {start_date} to {end_date}"
+        meta_para = Paragraph(period_text, self.styles['ReportBody'])
 
-        # Right Side: Meta Data (Date Range, Generated Time)
-        period_text = f"<b>Period:</b> {start_date} to {end_date}"
-        gen_text = f"<b>Generated:</b> {timestamp}"
-        # [FIX] Updated style reference
-        meta_para = Paragraph(f"{period_text}<br/>{gen_text}", self.styles['ReportBody'])
-
-        # Layout Table for Header
-        header_data = [[[title_para, company_para], meta_para]]
-        t = Table(header_data, colWidths=[4.5 * inch, 2.5 * inch])
-        t.setStyle(TableStyle([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
-            ('LINEBELOW', (0, 0), (-1, -1), 1, colors.HexColor("#E2E8F0")),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 15),
-        ]))
-        self.elements.append(t)
+        self.elements.append(title_para)
+        self.elements.append(meta_para)
         self.elements.append(Spacer(1, 0.3 * inch))
 
     def _create_kpi_cards(self, kpi_data):
-        """
-        Creates a row of 'cards' for high-level metrics.
-        kpi_data list of tuples: [("Label", "Value"), ("Label", "Value")]
-        """
         card_cells = []
         for label, value in kpi_data:
-            # Each card is a mini-table with background color
             l_para = Paragraph(label.upper(), self.styles['CardLabel'])
             v_para = Paragraph(value, self.styles['CardValue'])
-
-            # Inner table for the card content
             card_content = [[l_para], [v_para]]
             inner_t = Table(card_content, colWidths=[1.5 * inch])
             inner_t.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#F1F5F9")),  # Light Grey Background
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#F1F5F9")),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 8),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#CBD5E1")),  # Border
+                ('TOPPADDING', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#CBD5E1")),
                 ('ROUNDEDCORNERS', [4, 4, 4, 4]),
             ]))
             card_cells.append(inner_t)
 
-        # Container table to hold the cards horizontally
         container = Table([card_cells], colWidths=[1.7 * inch] * len(card_cells))
         container.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
@@ -3378,88 +3107,167 @@ class PDFReportGenerator:
         self.elements.append(container)
         self.elements.append(Spacer(1, 0.2 * inch))
 
+    def _create_line_chart(self, data, title="Sales Trend"):
+        if not data: return Spacer(1, 1)
+
+        drawing = Drawing(400, 200)
+
+        lc = HorizontalLineChart()
+        lc.x = 50
+        lc.y = 50
+        lc.height = 125
+        lc.width = 300
+
+        # Data must be a list of lists [[val1, val2...]]
+        lc.data = [[x[1] for x in data]]
+
+        # Axis Config
+        lc.categoryAxis.categoryNames = [x[0] for x in data]
+        lc.categoryAxis.labels.boxAnchor = 'n'
+        lc.categoryAxis.labels.dy = -10
+        lc.categoryAxis.labels.fontName = 'Helvetica'
+
+        lc.valueAxis.valueMin = 0
+        lc.valueAxis.gridStrokeColor = colors.HexColor("#E2E8F0")
+        lc.valueAxis.gridStrokeWidth = 0.5
+        lc.valueAxis.visibleGrid = 1
+
+        # Line Style
+        lc.lines[0].strokeColor = colors.HexColor("#1E3A8A")
+        lc.lines[0].strokeWidth = 2
+
+        # --- FIX: Use makeMarker instead of tuple ---
+        lc.lines[0].symbol = makeMarker('FilledCircle')
+        lc.lines[0].symbol.size = 4
+        lc.lines[0].symbol.fillColor = colors.HexColor("#0891B2")
+        lc.lines[0].symbol.strokeColor = colors.white
+
+        drawing.add(lc)
+
+        self.elements.append(Paragraph(f"<b>{title}</b>", self.styles['ReportBody']))
+        self.elements.append(drawing)
+        self.elements.append(Spacer(1, 0.2 * inch))
+
+    def _create_horizontal_bar_chart(self, data, title="Inventory Value by Category"):
+        if not data: return Spacer(1, 1)
+
+        # Sort descending
+        sorted_data = sorted(data, key=lambda x: x[1])
+        names = [x[0] for x in sorted_data]
+        values = [x[1] for x in sorted_data]
+
+        chart_height = 50 + (len(names) * 20)
+        drawing = Drawing(400, chart_height)
+
+        bc = HorizontalBarChart()
+        bc.x = 80
+        bc.y = 20
+        bc.height = chart_height - 30
+        bc.width = 300
+        bc.data = [values]
+        bc.strokeColor = colors.white
+        bc.valueAxis.valueMin = 0
+        bc.categoryAxis.categoryNames = names
+        bc.categoryAxis.labels.boxAnchor = 'e'
+        bc.categoryAxis.labels.dx = -5
+        bc.categoryAxis.labels.fontName = 'Helvetica'
+        bc.bars[0].fillColor = colors.HexColor("#0891B2")
+
+        drawing.add(bc)
+
+        self.elements.append(Paragraph(f"<b>{title}</b>", self.styles['ReportBody']))
+        self.elements.append(drawing)
+        self.elements.append(Spacer(1, 0.2 * inch))
+
     def _create_data_table(self, data, col_widths, col_alignments=None):
         if not data: return Spacer(1, 1)
 
         t = Table(data, colWidths=col_widths, repeatRows=1)
 
-        # Base Style
         style_cmds = [
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1E3A8A")),  # Dark Blue Header
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1E3A8A")),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, 0), 'LEFT'),  # Header Align Left
+            ('ALIGN', (0, 0), (-1, 0), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, 0), 10),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
             ('TOPPADDING', (0, 0), (-1, 0), 10),
-
-            # Row Styles
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 1), (-1, -1), 9),
             ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor("#334155")),
             ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
             ('TOPPADDING', (0, 1), (-1, -1), 8),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),  # Subtle Grid
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]
 
-        # Apply Column Alignments if provided (e.g., Numbers to the RIGHT)
         if col_alignments:
             for i, align in enumerate(col_alignments):
                 style_cmds.append(('ALIGN', (i, 1), (i, -1), align))
 
-        # Zebra Striping
         for i in range(1, len(data)):
-            if i % 2 == 0:
-                style_cmds.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor("#F8FAFC")))  # Very Light Grey
-            else:
-                style_cmds.append(('BACKGROUND', (0, i), (-1, i), colors.white))
+            bg = colors.HexColor("#F8FAFC") if i % 2 == 0 else colors.white
+            style_cmds.append(('BACKGROUND', (0, i), (-1, i), bg))
 
         t.setStyle(TableStyle(style_cmds))
         return t
 
-    # --- SECTION BUILDERS ---
+    # --- MAIN REPORT SECTIONS ---
 
     def add_sales_section(self, data, start_date, end_date):
         if self.elements: self.elements.append(PageBreak())
 
-        # 1. Header
-        self._add_header_info("Sales Report", start_date, end_date)
+        self._add_report_metadata("Sales Report", start_date, end_date)
 
         if not data:
-            # [FIX] Updated style reference
-            self.elements.append(Paragraph("No sales data found for this period.", self.styles['ReportBody']))
+            self.elements.append(Paragraph("No sales data found.", self.styles['ReportBody']))
             return
 
-        # 2. KPI Cards
+        # Metrics
         total_rev = sum(float(x['total_amount']) for x in data)
         txn_count = len(data)
-        avg_ticket = total_rev / txn_count if txn_count > 0 else 0
+        net_sales = total_rev / 1.12
+        tax_amount = total_rev - net_sales
 
         self._create_kpi_cards([
-            ("Total Revenue", f"P {total_rev:,.2f}"),
-            ("Transactions", str(txn_count)),
-            ("Avg Ticket", f"P {avg_ticket:,.2f}")
+            ("Gross Revenue", f"P {total_rev:,.2f}"),
+            ("Net Sales", f"P {net_sales:,.2f}"),
+            ("VAT (12%)", f"P {tax_amount:,.2f}"),
+            ("Transactions", str(txn_count))
         ])
 
-        # 3. Data Table
-        headers = ['Inv #', 'Date/Time', 'Cashier', 'Items', 'Total']
+        # Chart: Sales Trend (Using Line Chart)
+        chart_data = {}
+        for row in data:
+            dt_str = row['date'].strftime("%m-%d") if hasattr(row['date'], 'strftime') else str(row['date'])[:5]
+            chart_data[dt_str] = chart_data.get(dt_str, 0) + float(row['total_amount'])
+        sorted_chart = sorted(chart_data.items())[-7:]
+
+        self._create_line_chart(sorted_chart, title="Revenue Trend")
+
+        # Detailed Table
+        self.elements.append(Paragraph("<b>Transaction Details</b>", self.styles['SectionHeader']))
+        headers = ['Inv #', 'Date', 'Cashier', 'Total', 'Net', 'Tax']
         table_data = [headers]
         for row in data:
             dt = row['date'].strftime("%Y-%m-%d %H:%M") if hasattr(row['date'], 'strftime') else str(row['date'])
+            total = float(row['total_amount'])
+            net = total / 1.12
+            tax = total - net
+
             table_data.append([
                 str(row['invoice_id']),
                 dt,
                 row['cashier'],
-                str(row['items_count']),
-                f"P {float(row['total_amount']):,.2f}"
+                f"{total:,.2f}",
+                f"{net:,.2f}",
+                f"{tax:,.2f}"
             ])
 
-        # Alignments: Left, Left, Left, Center, Right
         self.elements.append(self._create_data_table(
             table_data,
-            [1 * inch, 2 * inch, 2 * inch, 1 * inch, 1.5 * inch],
-            ['LEFT', 'LEFT', 'LEFT', 'CENTER', 'RIGHT']
+            [0.8 * inch, 1.8 * inch, 1.5 * inch, 1.2 * inch, 1.1 * inch, 1.1 * inch],
+            ['LEFT', 'LEFT', 'LEFT', 'RIGHT', 'RIGHT', 'RIGHT']
         ))
 
     def add_inventory_section(self, data, report_type="Valuation"):
@@ -3467,59 +3275,91 @@ class PDFReportGenerator:
 
         title = "Inventory Valuation" if report_type == "Valuation" else "Low Stock Alerts"
         today = datetime.now().strftime("%Y-%m-%d")
-        self._add_header_info(title, today, today)
+        self._add_report_metadata(title, today, today)
 
         if not data:
-            # [FIX] Updated style reference
             self.elements.append(Paragraph("No records found.", self.styles['ReportBody']))
             return
 
-        # KPI Cards for Inventory
         if report_type == "Valuation":
             total_value = sum(float(x['total_value']) for x in data)
             total_items = sum(int(x['stock']) for x in data)
+
             self._create_kpi_cards([
                 ("Total Asset Value", f"P {total_value:,.2f}"),
-                ("Total Items in Stock", str(total_items))
+                ("Total Items", str(total_items)),
+                ("Unique SKUs", str(len(data)))
             ])
 
-            headers = ['ID', 'Product Name', 'Category', 'Stock', 'Price', 'Value']
-            col_widths = [0.8 * inch, 2.2 * inch, 1.5 * inch, 0.8 * inch, 1 * inch, 1.2 * inch]
-            alignments = ['LEFT', 'LEFT', 'LEFT', 'CENTER', 'RIGHT', 'RIGHT']
-
-            table_data = [headers]
+            # Chart: Category Value (Horizontal Bar)
+            cat_data = {}
             for row in data:
+                cat = row['category']
+                val = float(row['total_value'])
+                cat_data[cat] = cat_data.get(cat, 0) + val
+            self._create_horizontal_bar_chart(list(cat_data.items()))
+
+            # Table with Cost and Margin
+            headers = ['Name', 'Stock', 'Cost', 'Price', 'Margin', 'Value']
+            table_data = [headers]
+
+            for row in data:
+                # Handle potential missing cost_price if DB wasn't updated
+                cost = float(row.get('cost_price', 0))
+                price = float(row['selling_price'])
+                stock = int(row['stock'])
+
+                if price > 0:
+                    margin = ((price - cost) / price) * 100
+                    margin_str = f"{margin:.0f}%"
+                else:
+                    margin_str = "0%"
+
                 table_data.append([
-                    str(row['id']), row['name'], row['category'], str(row['stock']),
-                    f"P {float(row['selling_price']):,.2f}", f"P {float(row['total_value']):,.2f}"
+                    row['name'][:25],
+                    str(stock),
+                    f"{cost:,.2f}",
+                    f"{price:,.2f}",
+                    margin_str,
+                    f"{float(row['total_value']):,.2f}"
                 ])
 
-        else:  # Low Stock
-            low_stock_count = len(data)
-            self._create_kpi_cards([
-                ("Items Low on Stock", str(low_stock_count)),
-                ("Action Required", "Restock ASAP")
-            ])
+            self.elements.append(self._create_data_table(
+                table_data,
+                [2.5 * inch, 0.8 * inch, 1 * inch, 1 * inch, 0.8 * inch, 1.2 * inch],
+                ['LEFT', 'CENTER', 'RIGHT', 'RIGHT', 'CENTER', 'RIGHT']
+            ))
 
-            headers = ['ID', 'Product Name', 'Category', 'Stock', 'Threshold']
-            col_widths = [0.8 * inch, 2.5 * inch, 2 * inch, 1 * inch, 1 * inch]
-            alignments = ['LEFT', 'LEFT', 'LEFT', 'CENTER', 'CENTER']
+        else:  # Low Stock Report
+            low_count = len(data)
+            self._create_kpi_cards([("Low Stock Items", str(low_count)), ("Action", "Restock")])
 
+            headers = ['Name', 'Category', 'Stock', 'Threshold', 'Status']
             table_data = [headers]
             for row in data:
+                stock = int(row['stock'])
+                thresh = int(row['threshold'])
+                status = "CRITICAL" if stock == 0 else "LOW"
+
                 table_data.append([
-                    str(row['id']), row['name'], row['category'],
-                    str(row['stock']), str(row['threshold'])
+                    row['name'],
+                    row['category'],
+                    str(stock),
+                    str(thresh),
+                    status
                 ])
 
-        self.elements.append(self._create_data_table(table_data, col_widths, alignments))
+            self.elements.append(self._create_data_table(
+                table_data,
+                [2.5 * inch, 2 * inch, 1 * inch, 1 * inch, 1 * inch],
+                ['LEFT', 'LEFT', 'CENTER', 'CENTER', 'CENTER']
+            ))
 
     def add_audit_section(self, data, start_date, end_date):
         if self.elements: self.elements.append(PageBreak())
-        self._add_header_info("System Audit Logs", start_date, end_date)
+        self._add_report_metadata("System Audit Logs", start_date, end_date)
 
         if not data:
-            # [FIX] Updated style reference
             self.elements.append(Paragraph("No audit logs found.", self.styles['ReportBody']))
             return
 
@@ -3528,8 +3368,6 @@ class PDFReportGenerator:
         for row in data:
             dt = row['timestamp'].strftime("%Y-%m-%d %H:%M") if hasattr(row['timestamp'], 'strftime') else str(
                 row['timestamp'])
-            # Wrap detail text
-            # [FIX] Updated style reference
             details = Paragraph(row['details'], self.styles['ReportBody'])
             table_data.append([dt, row['user_name'], row['action'], details])
 
@@ -3541,7 +3379,7 @@ class PDFReportGenerator:
 
     def build(self):
         try:
-            self.doc.build(self.elements)
+            self.doc.build(self.elements, onFirstPage=self._header_footer, onLaterPages=self._header_footer)
             return True
         except Exception as e:
             print(f"PDF Build Error: {e}")
@@ -3862,7 +3700,7 @@ FILE: views\add_stock_dialog.ui
     <x>0</x>
     <y>0</y>
     <width>450</width>
-    <height>720</height>
+    <height>650</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -3890,12 +3728,6 @@ FILE: views\add_stock_dialog.ui
     QLineEdit:focus, QDateEdit:focus {
         border: 2px solid #06B6D4;
         background-color: white;
-    }
-    /* Style for disabled inputs to show visual feedback when logic runs */
-    QLineEdit:disabled, QComboBox:disabled {
-        background-color: #F1F5F9;
-        color: #94A3B8;
-        border: 1px solid #E2E8F0;
     }
    </string>
   </property>
@@ -3946,14 +3778,14 @@ FILE: views\add_stock_dialog.ui
       <item>
        <widget class="QLabel" name="lbl_code">
         <property name="text">
-         <string>Product Code (Auto-generated if empty)</string>
+         <string>Product Code (Auto-generate)</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QLineEdit" name="txt_barcode">
         <property name="placeholderText">
-         <string>e.g. P-1001 or Scan Barcode</string>
+         <string/>
         </property>
        </widget>
       </item>
@@ -3972,48 +3804,20 @@ FILE: views\add_stock_dialog.ui
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="lbl_new_cat">
-        <property name="text">
-         <string>New Category</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="txt_new_category">
-        <property name="toolTip">
-         <string>Type here to create a new category. This will disable the dropdown below.</string>
-        </property>
-        <property name="placeholderText">
-         <string>Type here to create a New Category...</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QLabel" name="lbl_cat">
         <property name="text">
-         <string>Existing Category</string>
+         <string>Category</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QComboBox" name="cmb_category">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>40</height>
-         </size>
-        </property>
-        <property name="accessibleDescription">
-         <string notr="true"/>
-        </property>
-        <property name="styleSheet">
-         <string notr="true"/>
-        </property>
-        <property name="editable">
-         <bool>false</bool>
+       <widget class="QLineEdit" name="txt_category">
+        <property name="toolTip">
+         <string>if category already exist
+will treat it as the same category</string>
         </property>
         <property name="placeholderText">
-         <string>Select from list...</string>
+         <string>e.g. Condiments, Canned, Frozen</string>
         </property>
        </widget>
       </item>
@@ -4183,7 +3987,7 @@ FILE: views\add_user_dialog.ui
         border: 1px solid #E2E8F0;
     }
     QLabel {
-        font-family: "Segoe UI";
+        font-family: &quot;Segoe UI&quot;;
         color: #334155;
         font-weight: bold;
         font-size: 14px;
@@ -4205,83 +4009,176 @@ FILE: views\add_user_dialog.ui
    </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
-   <property name="leftMargin"><number>20</number></property>
-   <property name="topMargin"><number>20</number></property>
-   <property name="rightMargin"><number>20</number></property>
-   <property name="bottomMargin"><number>20</number></property>
-
+   <property name="leftMargin">
+    <number>20</number>
+   </property>
+   <property name="topMargin">
+    <number>20</number>
+   </property>
+   <property name="rightMargin">
+    <number>20</number>
+   </property>
+   <property name="bottomMargin">
+    <number>20</number>
+   </property>
    <item>
     <widget class="QFrame" name="dialog_content">
-     <property name="frameShape"><enum>QFrame::StyledPanel</enum></property>
-     <property name="frameShadow"><enum>QFrame::Raised</enum></property>
-
+     <property name="frameShape">
+      <enum>QFrame::Shape::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Shadow::Raised</enum>
+     </property>
      <layout class="QVBoxLayout" name="layout_content">
-      <property name="spacing"><number>24</number></property>
-      <property name="leftMargin"><number>32</number></property>
-      <property name="topMargin"><number>32</number></property>
-      <property name="rightMargin"><number>32</number></property>
-      <property name="bottomMargin"><number>32</number></property>
-
+      <property name="spacing">
+       <number>24</number>
+      </property>
+      <property name="leftMargin">
+       <number>32</number>
+      </property>
+      <property name="topMargin">
+       <number>32</number>
+      </property>
+      <property name="rightMargin">
+       <number>32</number>
+      </property>
+      <property name="bottomMargin">
+       <number>32</number>
+      </property>
       <item>
        <widget class="QLabel" name="label_header">
-        <property name="text"><string>Add New User</string></property>
-        <property name="styleSheet"><string>font-size: 24px; font-weight: 800; color: #0F172A; margin-bottom: 5px;</string></property>
+        <property name="styleSheet">
+         <string>font-size: 24px; font-weight: 800; color: #0F172A; margin-bottom: 5px;</string>
+        </property>
+        <property name="text">
+         <string>Add New User</string>
+        </property>
        </widget>
       </item>
-
       <item>
        <layout class="QVBoxLayout" name="form_layout">
-        <property name="spacing"><number>20</number></property>
-
+        <property name="spacing">
+         <number>20</number>
+        </property>
         <item>
          <layout class="QVBoxLayout" name="vbox_name">
-          <property name="spacing"><number>8</number></property>
-          <item><widget class="QLabel" name="lbl_name"><property name="text"><string>Staff Name</string></property></widget></item>
-          <item><widget class="QLineEdit" name="input_name"><property name="placeholderText"><string>e.g. John Doe</string></property></widget></item>
+          <property name="spacing">
+           <number>8</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lbl_name">
+            <property name="text">
+             <string>Staff Name</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="input_name">
+            <property name="placeholderText">
+             <string>e.g. John Doe</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
-
         <item>
          <layout class="QVBoxLayout" name="vbox_role">
-          <property name="spacing"><number>8</number></property>
-          <item><widget class="QLabel" name="lbl_role"><property name="text"><string>Role</string></property></widget></item>
+          <property name="spacing">
+           <number>8</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lbl_role">
+            <property name="text">
+             <string>Role</string>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QComboBox" name="input_role">
-            <item><property name="text"><string>Cashier</string></property></item>
-            <item><property name="text"><string>Manager</string></property></item>
-            <item><property name="text"><string>Stock Clerk</string></property></item>
+            <property name="currentText">
+             <string>Cashier</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>Cashier</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Manager</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Stock Clerk</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>
         </item>
-
         <item>
          <layout class="QVBoxLayout" name="vbox_pass">
-          <property name="spacing"><number>8</number></property>
-          <item><widget class="QLabel" name="lbl_pass"><property name="text"><string>Password</string></property></widget></item>
+          <property name="spacing">
+           <number>8</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lbl_pass">
+            <property name="text">
+             <string>Password</string>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QLineEdit" name="input_password">
-            <property name="echoMode"><enum>QLineEdit::Password</enum></property>
-            <property name="placeholderText"><string>Set initial password</string></property>
+            <property name="echoMode">
+             <enum>QLineEdit::EchoMode::Password</enum>
+            </property>
+            <property name="placeholderText">
+             <string>Set initial password</string>
+            </property>
            </widget>
           </item>
          </layout>
         </item>
-
        </layout>
       </item>
-
-      <item><spacer name="verticalSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
-
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
       <item>
        <layout class="QHBoxLayout" name="actions_layout">
-        <property name="spacing"><number>12</number></property>
-        <item><spacer name="hspacer"><property name="orientation"><enum>Qt::Horizontal</enum></property><property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property></spacer></item>
-
+        <property name="spacing">
+         <number>12</number>
+        </property>
+        <item>
+         <spacer name="hspacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
         <item>
          <widget class="QPushButton" name="btn_cancel">
-          <property name="text"><string>Cancel</string></property>
-          <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
           <property name="styleSheet">
            <string notr="true">
             QPushButton {
@@ -4295,13 +4192,16 @@ FILE: views\add_user_dialog.ui
             QPushButton:hover { background-color: #F1F5F9; }
            </string>
           </property>
+          <property name="text">
+           <string>Cancel</string>
+          </property>
          </widget>
         </item>
-
         <item>
          <widget class="QPushButton" name="btn_create">
-          <property name="text"><string>Create Account</string></property>
-          <property name="cursor"><cursorShape>PointingHandCursor</cursorShape></property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
           <property name="styleSheet">
            <string notr="true">
             QPushButton {
@@ -4315,11 +4215,13 @@ FILE: views\add_user_dialog.ui
             QPushButton:hover { background-color: #0E7490; }
            </string>
           </property>
+          <property name="text">
+           <string>Create Account</string>
+          </property>
          </widget>
         </item>
        </layout>
       </item>
-
      </layout>
     </widget>
    </item>
@@ -4332,15 +4234,36 @@ FILE: views\add_user_dialog.ui
    <signal>clicked()</signal>
    <receiver>AddUserDialog</receiver>
    <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
   <connection>
    <sender>btn_create</sender>
    <signal>clicked()</signal>
    <receiver>AddUserDialog</receiver>
    <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
   </connection>
  </connections>
 </ui>
+
 
 ==================================================
 FILE: views\audit_window.ui
@@ -8395,7 +8318,7 @@ FILE: views\login_window.ui
     <x>0</x>
     <y>0</y>
     <width>1080</width>
-    <height>676</height>
+    <height>665</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -8441,13 +8364,10 @@ FILE: views\login_window.ui
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
          </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Policy::Fixed</enum>
-         </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>140</height>
+           <height>40</height>
           </size>
          </property>
         </spacer>
@@ -8477,7 +8397,7 @@ FILE: views\login_window.ui
           <string>font-size: 56px; font-weight: 800; letter-spacing: 2px; color: white;</string>
          </property>
          <property name="text">
-          <string>&lt;span style=&quot;color: #FFFFF;&quot;&gt;Shelf&lt;/span&gt;&lt;span style=&quot;color: #148CAA;&quot;&gt;Sy&lt;/span&gt;&lt;span style=&quot;color: #11CDC8;&quot;&gt;nc&lt;/span&gt;</string>
+          <string>ShelfSync</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -8502,13 +8422,10 @@ FILE: views\login_window.ui
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
          </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Policy::Fixed</enum>
-         </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>145</height>
+           <height>40</height>
           </size>
          </property>
         </spacer>
@@ -8766,23 +8683,6 @@ FILE: views\login_window.ui
        </item>
        <item>
         <layout class="QHBoxLayout" name="hbox_extras">
-         <item>
-          <widget class="QCheckBox" name="check_remember">
-           <property name="cursor">
-            <cursorShape>PointingHandCursor</cursorShape>
-           </property>
-           <property name="styleSheet">
-            <string>
-                QCheckBox { color: #64748B; spacing: 8px; }
-                QCheckBox::indicator { width: 18px; height: 18px; border: 1px solid #CBD5E1; border-radius: 4px; }
-                QCheckBox::indicator:checked { background-color: #06B6D4; border-color: #06B6D4; }
-            </string>
-           </property>
-           <property name="text">
-            <string>Remember me</string>
-           </property>
-          </widget>
-         </item>
          <item>
           <spacer name="spacer_extras">
            <property name="orientation">

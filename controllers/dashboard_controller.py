@@ -17,22 +17,20 @@ class DashboardController(QtCore.QObject):
 
         self.setup_ui()
         self.refresh_data()
-        self.start_clock()  # <--- Start the clock immediately
+        self.start_clock()  #Start clock
 
     def setup_ui(self):
-        # --- 1. GET USER NAME ---
-        # We fetch this once during setup so we don't query it every second
+        # GET USER
         if hasattr(self.main_controller, 'user'):
             current_user = getattr(self.main_controller, 'user', None)
             if current_user:
-                # Handle if user is an Object (user.name) or Dictionary (user['name'])
+                # Handle if user is an Obj (user.name) or dic(user['name'])
                 if hasattr(current_user, 'name'):
                     self.current_user_name = current_user.name
                 elif isinstance(current_user, dict):
                     self.current_user_name = current_user.get('name', 'Manager')
 
-        # --- 2. EXISTING UI EFFECTS ---
-        # Apply Hover Effect (Floating + Shadow) for cards
+        # Apply Hover Effectfor cards
         if hasattr(self.main_controller, 'card_revenue'):
             apply_hover_effect(self.main_controller.card_revenue)
         if hasattr(self.main_controller, 'card_stock'):
@@ -40,7 +38,6 @@ class DashboardController(QtCore.QObject):
         if hasattr(self.main_controller, 'card_expiring'):
             apply_hover_effect(self.main_controller.card_expiring)
 
-        # Static shadow for the table frame (no floating)
         if hasattr(self.main_controller, 'frame_table'):
             add_drop_shadow(self.main_controller.frame_table)
 
@@ -52,26 +49,23 @@ class DashboardController(QtCore.QObject):
         if hasattr(self.main_controller, 'lbl_icon_3'):
             set_icon(self.main_controller.lbl_icon_3, 'history.svg', size=24)  # Expiring
 
-    # --- NEW CLOCK FUNCTIONS ---
+    #CLOCK FUNCT-
     def start_clock(self):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_dashboard_time)
-        self.timer.start(1000)  # Update every 1 second
-        self.update_dashboard_time()  # Run immediately
+        self.timer.start(1000)  # Update every 1 sec
+        self.update_dashboard_time()  # Run immed
 
     def update_dashboard_time(self):
-        # Get current time
+        # Get curr time
         current_time = QDateTime.currentDateTime()
-
-        # Format: Month Day, Year | Hour:Minute:Second AM/PM
-        # Example: December 17, 2025 | 09:30:45 AM
         date_display = current_time.toString("MMMM d, yyyy")
         time_display = current_time.toString("hh:mm:ss AP")
 
         # Combine Welcome Message + Date/Time
         final_text = f"Welcome back, {self.current_user_name}\n{date_display} | {time_display}"
 
-        # Update the label
+        # Update label
         if hasattr(self.main_controller, 'label_dash_sub'):
             self.main_controller.label_dash_sub.setText(final_text)
 
@@ -92,16 +86,16 @@ class DashboardController(QtCore.QObject):
     def populate_sales_list(self):
         layout = self.main_controller.layout_sales_list
 
-        # 1. Clear existing items
+        #Clear existing items
         while layout.count() > 0:
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
 
-        # 2. Fetch Data
+        #Fetch Data
         sales = self.db.get_recent_sales()
 
-        # 3. Load UI
+        #Load UI
         ui_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             'views', 'item_sale.ui'
@@ -113,23 +107,23 @@ class DashboardController(QtCore.QObject):
         for sale in sales:
             try:
                 widget = uic.loadUi(ui_path)
-
-                # 1. TOTAL ITEMS (Matches 'items_count' from DB)
+                #FROM DB lahat
+                # TOTAL ITEMS 'items_count'
                 if hasattr(widget, 'lbl_items'):
                     count = sale.get('items_count', 0)
                     widget.lbl_items.setText(f"{count} Items")
 
-                # 2. TOTAL AMOUNT (Matches 'total_amount' from DB)
+                # TOTAL AMOUNT 'total_amount'
                 if hasattr(widget, 'lbl_total'):
                     amount = float(sale.get('total_amount', 0))
                     widget.lbl_total.setText(f"₱{amount:,.2f}")
 
-                # 3. CASHIER NAME (Matches 'cashier_name' from DB)
+                # CASHIER NAME 'cashier_name'
                 if hasattr(widget, 'lbl_name'):
                     cashier = sale.get('cashier_name', 'N/A')
                     widget.lbl_name.setText(cashier)
 
-                # 4. TIME
+                # TIME
                 if hasattr(widget, 'lbl_time'):
                     time_val = sale.get('sale_timestamp')
                     if time_val:

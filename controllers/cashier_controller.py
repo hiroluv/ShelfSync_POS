@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QMainWindow, QLineEdit
-from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor  # <--- Added painting imports
-from PyQt6.QtCore import pyqtSignal, Qt, QEvent  # <--- Added Qt, QEvent
+from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor
+from PyQt6.QtCore import pyqtSignal, Qt, QEvent
 from PyQt6 import uic, QtCore
 import os
 
@@ -16,7 +16,7 @@ class CashierController(QMainWindow):
         self.user = user
         self.db = main_app.db
 
-        # 1. LOAD UI
+        # LOAD UI
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         ui_path = os.path.join(base_path, 'views', 'cashier_window.ui')
 
@@ -26,24 +26,23 @@ class CashierController(QMainWindow):
             print(f"dili ma load ang UI file sa {ui_path}\nbro: {e}")
             return
 
-        # --- Product Grid ---
+        # Product Grid
         if hasattr(self, 'grid_products'):
             self.grid_controller = ProductGrid_Controller(self, self.grid_products, self.db)
             self.grid_controller.refresh_products()
         else:
             print("Error: 'grid_products' widget not found in UI")
 
-        # --- Cart Controller ---
+        # Cart Controller
         if hasattr(self, 'scrollArea_cart'):
             self.cart_controller = Cart_Controller(self, self.scrollArea_cart, self.db)
 
-        # VISUALS
+        # VISUAL
         self.setup_ui()
-        # CONNECTIONS
         self.setup_connections()
 
     def setup_ui(self):
-        """Sets up ang svg icons"""
+        #SVG icons man
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         # Search Icon
@@ -65,28 +64,21 @@ class CashierController(QMainWindow):
                     f'<html><head/><body><p><img src="{cart_icon_path}" width="20" height="20"/>&nbsp;&nbsp;{current_text}</p></body></html>'
                 )
 
-        # --- LOGOUT BUTTON (ADDED THIS) ---
-        # 1. Find the button (checks for 'btn_logout' or 'btn_exit')
-        btn_logout = getattr(self, 'btn_logout', getattr(self, 'btn_exit', None))
+        btn_logout = getattr(self, 'btn_logout')
 
         if btn_logout:
             logout_path = os.path.join(base_path, 'assets', 'side_panel_icons', 'active', 'log-out.svg')
-
             if os.path.exists(logout_path):
-                # 2. Configure it to change color (Grey -> Red) on hover
+                #change color (Grey -> Red) pag naka hover
                 self.setup_text_icon_button(
                     btn_logout,
                     logout_path,
-                    normal_color="#64748B",  # Slate Grey
-                    hover_color="#EF4444"  # Red
+                    normal_color="#64748B", hover_color="#EF4444"
                 )
 
     def setup_text_icon_button(self, btn, icon_path, normal_color, hover_color):
-        """
-        Helper: Configures a button to have NO background, but changes Text and Icon color on hover.
-        """
+        #icon no background but change color when hover
 
-        # A. Paint Icons for both states (Normal & Hover)
         def paint_icon(path, color_hex):
             original = QPixmap(path)
             painted = QPixmap(original.size())
@@ -94,23 +86,20 @@ class CashierController(QMainWindow):
             painter = QPainter(painted)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
             painter.drawPixmap(0, 0, original)
-            # Paint the opaque pixels with the new color
+
             painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
             painter.fillRect(painted.rect(), QColor(color_hex))
             painter.end()
             return QIcon(painted)
 
-        # B. Store the colored icons in the button
         btn.icon_normal = paint_icon(icon_path, normal_color)
         btn.icon_hover = paint_icon(icon_path, hover_color)
-
-        # C. Set Initial State
         btn.setIcon(btn.icon_normal)
         btn.setIconSize(QtCore.QSize(20, 20))
         btn.setAttribute(Qt.WidgetAttribute.WA_Hover)
         btn.installEventFilter(self)
 
-        # D. Set Stylesheet (Text Color Change Only)
+        # Text Color Change Only)
         btn.setStyleSheet(f"""
             QPushButton {{
                 text-align: left; 
@@ -133,9 +122,8 @@ class CashierController(QMainWindow):
         """)
 
     def setup_connections(self):
-        """Connects slots."""
 
-        # Product Grid -> Add to Cart
+        # grid to Add to Cart
         if hasattr(self, 'grid_controller') and hasattr(self, 'cart_controller'):
             if hasattr(self.grid_controller, 'product_clicked'):
                 self.grid_controller.product_clicked.connect(self.handle_add_product)
@@ -145,32 +133,28 @@ class CashierController(QMainWindow):
                     lambda text: self.grid_controller.filter_products(text)
                 )
 
-        # 2. Checkout Button
+        #Checkout / process butn
         if hasattr(self, 'btn_checkout'):
             self.btn_checkout.clicked.connect(self.handle_checkout)
 
-        # 3. Exit Button
+        #Exit Button
         if hasattr(self, 'btn_logout'):
-            # Connect to handle_logout instead na close() directly
             self.btn_logout.clicked.connect(self.handle_logout)
             print("DEBUG: Exit button connected successfully.")
-        else:
-            print("WARNING: 'btn_exit' not found in UI. Please check the button name in Qt Designer.")
 
-    # --- EVENT FILTER (Handles Icon Swapping) ---
+    # icon color swap
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.Enter:
-            # Mouse Enter: Switch to Hover Icon (Red)
+            # Hover Icon (Red)
             if hasattr(source, 'icon_hover'):
                 source.setIcon(source.icon_hover)
         elif event.type() == QEvent.Type.Leave:
-            # Mouse Leave: Revert to Normal Icon (Grey)
+            # Normal Icon (Grey)
             if hasattr(source, 'icon_normal'):
                 source.setIcon(source.icon_normal)
-
         return super().eventFilter(source, event)
 
-    # --- ACTIONs cutieeee---
+    #ACTIONs cutieeee
 
     def handle_logout(self):
         """Handles the exit button click."""

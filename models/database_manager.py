@@ -1,7 +1,5 @@
 import mysql.connector
 from mysql.connector import Error
-
-# Import Entity for Auth
 from models.entities import User
 from models.db_cashier import CashierDB
 from models.db_manager import ManagerDB
@@ -9,7 +7,6 @@ from models.db_manager import ManagerDB
 
 class DatabaseManager:
     def __init__(self):
-        # Configuration
         self.config = {
             'host': 'localhost',
             'user': 'root',
@@ -17,31 +14,29 @@ class DatabaseManager:
             'database': 'pos_system'
         }
 
-        # Initialize sub-managers, passing 'self' to give them access to get_connection()
         self.cashier_db = CashierDB(self)
         self.manager_db = ManagerDB(self)
 
     def get_connection(self):
-        """Centralized connection factory used by sub-managers."""
+        #Centralized connection
         try:
             return mysql.connector.connect(**self.config)
         except Error as e:
             print(f"Error connecting to MySQL: {e}")
             return None
 
-    # ================= CORE AUTH =================
     def authenticate_user(self, username, password):
         conn = self.get_connection()
         user_obj = None
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor(dictionary=True)
-                # In production, use hashed passwords!
+                # In production,
                 query = "SELECT id, name, role FROM users WHERE name = %s AND password = %s"
                 cursor.execute(query, (username, password))
                 result = cursor.fetchone()
 
-                # --- FIX: Return User Object ---
+                # Return User Obj
                 if result:
                     user_obj = User(result['id'], result['name'], result['role'])
             except Error as e:
@@ -50,18 +45,14 @@ class DatabaseManager:
                 conn.close()
         return user_obj
 
-    # =========================================================
-    # PROXY METHODS - These ensure Controllers don't break
-    # =========================================================
-
-    # --- Cashier Routes ---
+    #Cashier
     def get_all_products(self):
         return self.cashier_db.get_all_products()
 
     def process_transaction(self, cart, total, cashier):
         return self.cashier_db.process_transaction(cart, total, cashier)
 
-    # --- Manager/Inventory Routes ---
+    # --- Manager/Inventory
     def get_all_users(self):
         return self.manager_db.get_all_users()
 
@@ -74,27 +65,22 @@ class DatabaseManager:
     def get_inventory_items(self):
         return self.manager_db.get_inventory_items()
 
-    # Note: These methods assume ManagerDB has them. If not, add them to ManagerDB.
-    # The error logs suggest ManagerDB handles product logic.
     def add_product(self, name, cat, stk, cost, price, thres, exp):
-        # Assuming this method exists in ManagerDB (db_manager.py)
         if hasattr(self.manager_db, 'add_product'):
             return self.manager_db.add_product(name, cat, stk, cost, price, thres, exp)
         return False
 
     def update_product(self, pid, name, cat, stk, cost, price, thres, exp):
-        # Assuming this method exists in ManagerDB
         if hasattr(self.manager_db, 'update_product'):
             return self.manager_db.update_product(pid, name, cat, stk, cost, price, thres, exp)
         return False
 
     def delete_product(self, pid):
-        # Assuming this method exists in ManagerDB
         if hasattr(self.manager_db, 'delete_product'):
             return self.manager_db.delete_product(pid)
         return False
 
-    # --- Dashboard Routes ---
+    # Dashboard ways
     def get_dashboard_stats(self):
         return self.manager_db.get_dashboard_stats()
 
@@ -106,8 +92,6 @@ class DatabaseManager:
 
     def get_top_products(self, limit=5):
         return self.manager_db.get_top_products(limit)
-
-    # === AUDIT LOG METHODS ===
 
     def get_audit_logs(self):
         logs = []

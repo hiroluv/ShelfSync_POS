@@ -43,7 +43,6 @@ class PerishablesController:
             if item.widget():
                 item.widget().deleteLater()
 
-        # This will now work because self.db is an instance of ManagerDB
         filtered_items = self.db.get_expiring_products_in_stock(days_threshold=30)
 
         today = datetime.date.today()

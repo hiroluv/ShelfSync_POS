@@ -11,48 +11,28 @@ class ReportsController(QtCore.QObject):
         self.view = view
         self.main_controller = main_controller
         self.db = ManagerDB(main_controller.db) #access to self.db.get_top_products() AND self.db.main_db.get_connection()
-
         self.setup_ui()
         self.refresh_data()
 
-    def apply_modern_scrollbar_style(self, scroll_area):
-        qss = """
-        QScrollArea { border: none; background-color: transparent; }
-        QScrollBar:vertical { border: none; background: transparent; width: 8px; }
-        QScrollBar::groove:vertical { border: none; background: transparent; width: 0px; }
-        QScrollBar::handle:vertical { background-color: #94A3B8; border-radius: 4px; min-height: 20px; }
-        QScrollBar::handle:vertical:hover { background-color: #64748B; }
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
-        """
-        scroll_area.setStyleSheet(scroll_area.styleSheet() + qss)
 
     def setup_ui(self):
         #Hover Effect
         if hasattr(self.view, 'card_alert_stock'): apply_hover_effect(self.view.card_alert_stock)
         if hasattr(self.view, 'card_alert_expiry'): apply_hover_effect(self.view.card_alert_expiry)
         if hasattr(self.view, 'card_financial'): apply_hover_effect(self.view.card_financial)
-
-        #Scrollbar Style
-        if hasattr(self.view, 'scrollArea_top_selling'):
-            self.apply_modern_scrollbar_style(self.view.scrollArea_top_selling)
-
         #Icons
         if hasattr(self.view, 'icon_stock'): set_icon(self.view.icon_stock, 'alert-triangle.svg', size=24)
         if hasattr(self.view, 'icon_exp'): set_icon(self.view.icon_exp, 'history.svg', size=24)
-
-        # [NEW] Connect the Generate Report Button
         if hasattr(self.view, 'generateReportBtn'):
             self.view.generateReportBtn.clicked.connect(self.open_report_dialog)
 
-    # [NEW] Method to open the dialog
+    #open the dialog
     def open_report_dialog(self):
         try:
             overlay = Overlay(self.main_controller)
             overlay.show() #blur effect again
-            # Pass self.view as parent so the dialog centers on the reports window
             dialog = ReportDialogController(parent=self.view)
             dialog.exec()
-
             overlay.close()
         except Exception as e:
             print(f"Error opening report dialog: {e}")
@@ -80,9 +60,8 @@ class ReportsController(QtCore.QObject):
         if hasattr(self.view, 'lbl_val_cost'): self.view.lbl_val_cost.setText(f"₱{estimated_cost:,.2f}")
         if hasattr(self.view, 'lbl_val_profit'): self.view.lbl_val_profit.setText(f"₱{estimated_profit:,.2f}")
 
-        # --- 2. Alerts (Using ManagerDB Method) ---
+        # Alerts
         try:
-            # Assuming get_dashboard_stats exists in ManagerDB (db_manager.py)
             if hasattr(self.db, 'get_dashboard_stats'):
                 stats = self.db.get_dashboard_stats()
                 if hasattr(self.view, 'lbl_val_alert_stock'):
@@ -92,7 +71,6 @@ class ReportsController(QtCore.QObject):
         except Exception as e:
             print(f"Error fetching stats: {e}")
 
-        # --- 3. Top Selling Items ---
         self.populate_top_selling()
 
     def populate_top_selling(self):
@@ -104,12 +82,11 @@ class ReportsController(QtCore.QObject):
             item = layout.takeAt(0)
             if item.widget(): item.widget().deleteLater()
 
-        # Fetch Items using ManagerDB method
+        # Fetch Items using
         items = []
         try:
-            # This calls the method in db_manager.py
             results = self.db.get_top_products(limit=5)
-            # Convert dictionary result to tuple list [(name, qty), ...]
+            # Convert dictionaryto tuple[(name, qty), ...]
             items = [(row['name'], row['total_qty']) for row in results]
         except Exception as e:
             print(f"Error loading top products: {e}")
@@ -119,7 +96,7 @@ class ReportsController(QtCore.QObject):
 
         max_sold = max(count for _, count in items)
 
-        # Load Row UI
+        # Load Row
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         ui_path = os.path.join(base_path, 'views', 'item_report.ui')
 
@@ -131,7 +108,6 @@ class ReportsController(QtCore.QObject):
 
                 if hasattr(row_widget, 'lbl_name'): row_widget.lbl_name.setText(name)
                 if hasattr(row_widget, 'lbl_count'): row_widget.lbl_count.setText(f"{count} sold")
-
                 if hasattr(row_widget, 'progress_bar'):
                     percent = int((count / max_sold) * 100) if max_sold > 0 else 0
                     row_widget.progress_bar.setValue(percent)
@@ -140,7 +116,6 @@ class ReportsController(QtCore.QObject):
             except Exception as e:
                 print(f"Error rendering report row: {e}")
 
-        # Add Spacer at bottom
         spacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Policy.Minimum,
                                        QtWidgets.QSizePolicy.Policy.Expanding)
         layout.addItem(spacer)

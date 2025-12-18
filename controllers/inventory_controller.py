@@ -1,16 +1,7 @@
-from PyQt6 import QtWidgets, uic, QtCore
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6 import uic
 import os
-
-# Utils
-try:
-    from utils.ui_helper import Overlay, add_drop_shadow, set_icon
-    from utils.toast_notification import show_toast
-except ImportError:
-    pass
-
-# Import Sub-Controllers
+from utils.ui_helper import Overlay, add_drop_shadow, set_icon
+from utils.toast_notification import show_toast
 from controllers.add_stock_controller import AddStockDialogController
 from controllers.edit_product_controller import EditProductDialogController
 from controllers.audit_controller import AuditWindowController
@@ -26,40 +17,37 @@ class InventoryController:
 
         self.setup_ui()
         self.setup_connections()
-
         # Start with All Items active
         if hasattr(self.view, 'btn_filter_all'):
             self.set_active_filter(self.view.btn_filter_all)
-
         # Load data
         self.refresh_data("all")
 
     def setup_ui(self):
-        """Configure UI elements."""
 
-        # Setup Add Stock Button
+        #Add Stock Button
         if hasattr(self.view, 'btn_add_stock'):
             add_drop_shadow(self.view.btn_add_stock, color_alpha=100, hex_color="#06B6D4")
             set_icon(self.view.btn_add_stock, 'plus.svg', size=18)
             self.view.btn_add_stock.setText(" Add Stock")
 
-        # Setup View Logs Button
+        #View Logs Button
         if hasattr(self.view, 'btn_view_logs'):
             set_icon(self.view.btn_view_logs, 'clipboard.svg', size=18)
             self.view.btn_view_logs.setText(" Audit Logs")
 
-        # Setup Filter Button Styles
+        #hardcode Filter Button
         style_active = """
-            QPushButton {
-                background-color: #06B6D4; color: white; border: none; border-radius: 18px; font-weight: bold; font-size: 13px;
-            }
-        """
+                QPushButton {
+                    background-color: #06B6D4; color: white; border: none; border-radius: 18px; font-weight: bold; font-size: 13px;
+                }
+            """
         style_default = """
-            QPushButton {
-                background-color: white; color: #64748B; border: 1px solid #E2E8F0; border-radius: 18px; font-weight: 600; font-size: 13px;
-            }
-            QPushButton:hover { background-color: #F8FAFC; }
-        """
+                QPushButton {
+                    background-color: white; color: #64748B; border: 1px solid #E2E8F0; border-radius: 18px; font-weight: 600; font-size: 13px;
+                }
+                QPushButton:hover { background-color: #F8FAFC; }
+            """
 
         buttons = ['btn_filter_all', 'btn_filter_low', 'btn_filter_out']
         for btn_name in buttons:
@@ -92,7 +80,6 @@ class InventoryController:
                 lambda: [self.set_active_filter(self.view.btn_filter_out), self.refresh_data("out")])
 
         # Search Bar Connection
-        # Note: Updated name to 'lineEdit_search' based on your latest UI file
         if hasattr(self.view, 'lineEdit_search'):
             self.view.lineEdit_search.textChanged.connect(self.handle_search)
 
@@ -106,7 +93,7 @@ class InventoryController:
             button.setStyleSheet(button.active_style)
 
     def get_current_username(self):
-        """Safely retrieves the name of the currently logged-in user."""
+        """name of the currently logged-in user."""
         if not hasattr(self.main_controller, 'user') or not self.main_controller.user:
             return "System Admin"
         user_data = self.main_controller.user
@@ -115,7 +102,7 @@ class InventoryController:
         return getattr(user_data, 'name', 'Unknown User')
 
     def refresh_data(self, filter_type="all"):
-        """Refreshes the inventory list based on filters AND search text."""
+        #Refreshes the inventory list based on filters AND search text."""
         if not hasattr(self.view, 'layout_inventory_list'):
             return
 
@@ -126,11 +113,10 @@ class InventoryController:
             item = layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-
-        # === FETCH DATA ===
+        #fetch data
         products = self.db.get_inventory_items()
 
-        # === GET SEARCH TEXT ===
+        # fetch text
         search_text = ""
         if hasattr(self.view, 'lineEdit_search'):
             search_text = self.view.lineEdit_search.text().lower().strip()
@@ -144,12 +130,6 @@ class InventoryController:
                 cat_match = search_text in p.category.lower()
                 if not (name_match or cat_match):
                     continue
-
-                    # 2. Category/Status Filter
-            # (Note: In a real app, you might track 'current_filter' state rather than passing string)
-            # But for now, we rely on the button click passing the string,
-            # or if called from search, we default to "all" (or we should track the active state).
-            # *Improvement*: You might want to save self.current_filter_state = "all" in init
 
             if filter_type == "low":
                 if not (p.stock <= p.threshold and p.stock > 0): continue

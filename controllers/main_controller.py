@@ -1,4 +1,3 @@
-# controllers/main_controller.py
 from PyQt6 import QtWidgets, uic, QtGui, QtCore
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtGui import QIcon
@@ -12,7 +11,6 @@ from controllers.inventory_controller import InventoryController
 from controllers.perishables_controller import PerishablesController
 from controllers.reports_controller import ReportsController
 from controllers.users_controller import UsersController
-from models.database_manager import DatabaseManager
 from utils.ui_helper import center_window
 
 
@@ -21,22 +19,15 @@ class MainController(QMainWindow):
 
     def __init__(self, db_manager, user_data=None):
         super().__init__()
-
         self.setWindowOpacity(0.0)
-
         self.db = db_manager
         self.user = user_data  # Store the logged-in user
-
         self.load_main_ui()
         self.setup_sidebar()
+        self.update_user_display()        # Display the user name
+        self.init_pages()         # Initialize pages
 
-        # Display the user name immediately
-        self.update_user_display()
-
-        # Initialize pages
-        self.init_pages()
-
-        # Connect Navigation
+        # Connect Navig
         if hasattr(self, 'btn_nav_dashboard'):
             self.btn_nav_dashboard.clicked.connect(lambda: self.switch_page(0))
         if hasattr(self, 'btn_nav_inventory'):
@@ -47,18 +38,17 @@ class MainController(QMainWindow):
             self.btn_nav_reports.clicked.connect(lambda: self.switch_page(3))
         if hasattr(self, 'btn_nav_users'):
             self.btn_nav_users.clicked.connect(lambda: self.switch_page(4))
-
         if hasattr(self, 'btn_logout'):
             self.btn_logout.clicked.connect(self.handle_logout)
 
-        # Force size for the Manager Dashboard
+        #force sizw
         self.resize(1200, 700)
 
         center_window(self)
         self.fade_in()
 
     def update_user_display(self):
-        """Updates the sidebar label with the current user's name and role."""
+        #shows the logged in user
         if hasattr(self, 'lbl_user'):
             if self.user:
                 # Handle both dictionary and object access
@@ -76,6 +66,7 @@ class MainController(QMainWindow):
             else:
                 self.lbl_user.setText("System Admin")
 
+    #fade in effects
     def fade_in(self):
         self.anim = QtCore.QPropertyAnimation(self, b"windowOpacity")
         self.anim.setDuration(600)
@@ -101,7 +92,6 @@ class MainController(QMainWindow):
         self.icon_folder_normal = os.path.join(base_path, 'assets', 'side_panel_icons')
         self.icon_folder_active = os.path.join(self.icon_folder_normal, 'active')
 
-        # --- [NEW] Load Logo Image ---
         if hasattr(self, 'logo_image'):
             logo_path = os.path.join(base_path, 'assets', 'logo.png')
             if os.path.exists(logo_path):
@@ -114,7 +104,6 @@ class MainController(QMainWindow):
                 self.logo_image.setPixmap(scaled_pixmap)
             else:
                 print(f"Warning: Logo file not found at {logo_path}")
-        # -----------------------------
 
         self.sidebar_buttons = []
         if hasattr(self, 'btn_nav_dashboard'): self.sidebar_buttons.append((self.btn_nav_dashboard, "dashboard.svg"))
@@ -160,6 +149,7 @@ class MainController(QMainWindow):
             btn.setIcon(QIcon(path))
             btn.setIconSize(QtCore.QSize(20, 20))
 
+    #Side bar hover effsss
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.Type.Enter:
             if hasattr(source, 'path_active'):
@@ -196,19 +186,19 @@ class MainController(QMainWindow):
         # 1. Dashboard
         self.dashboard_controller = DashboardController(self.page_dashboard, self)
 
-        # 2. Inventory (CORRECT: inventory_window.ui)
+        # 2. Inventory
         self.page_inventory = self.load_and_add_page('inventory_window.ui')
         self.inventory_controller = InventoryController(self.page_inventory, self)
 
-        # 3. Perishables (CORRECT: perishables_window.ui)
+        # 3. Perishables
         self.page_perishables = self.load_and_add_page('perishables_window.ui')
         self.perishables_controller = PerishablesController(self.page_perishables, self)
 
-        # 4. Reports (CORRECT: reports_window.ui)
+        # 4. Reports
         self.page_reports = self.load_and_add_page('reports_window.ui')
         self.reports_controller = ReportsController(self.page_reports, self)
 
-        # 5. Users (CORRECT: user_accounts_window.ui)
+        # 5. Users
         self.page_users = self.load_and_add_page('user_accounts_window.ui')
         self.users_controller = UsersController(self.page_users, self)
 

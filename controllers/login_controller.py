@@ -1,6 +1,6 @@
-from PyQt6 import QtWidgets, uic, QtCore, QtGui
+from PyQt6 import  uic, QtCore
 from PyQt6.QtWidgets import QMainWindow, QLineEdit, QMessageBox, QApplication
-from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import pyqtSignal, QTimer
 from utils.ui_helper import add_drop_shadow, center_window
 import os
@@ -107,7 +107,7 @@ class LoginController(QMainWindow):
 
     def handle_forgot_password(self):
         QMessageBox.information(self, "Reset Password",
-                                "Please contact your System Administrator to reset your password.")
+                                "Please contact your Manager to reset your password.")
 
     def handle_login(self):
         username = self.input_user.text().strip()

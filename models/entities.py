@@ -32,7 +32,6 @@ class Product:
 
 class DashboardStats:
     def __init__(self, revenue, low_stock_count, expiring_count):
-        # FIX: The controller expects 'self.revenue', not 'self.daily_revenue'
-        self.revenue = float(revenue) if revenue is not None else 0.0
+        self.revenue = float(revenue) if revenue is not None else 0.0        # 'self.daily_revenue
         self.low_stock_count = int(low_stock_count) if low_stock_count is not None else 0
         self.expiring_count = int(expiring_count) if expiring_count is not None else 0

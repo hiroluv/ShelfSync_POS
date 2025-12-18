@@ -1,13 +1,12 @@
-# models/db_manager.py
 from mysql.connector import Error
 from models.entities import User, InventoryItem, DashboardStats
 
-
+#Manager's side DB
 class ManagerDB:
     def __init__(self, db_manager):
         self.main_db = db_manager  # Access to get_connection()
 
-    # ================= USER MANAGEMENT =================
+    # manage users
     def get_all_users(self):
         users = []
         conn = self.main_db.get_connection()
@@ -44,31 +43,27 @@ class ManagerDB:
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor()
-
-                # --- SAFETY CHECK: Prevent deleting the last Manager ---
+                # prevent deleting last manager's profile
                 cursor.execute("SELECT role FROM users WHERE id = %s", (user_id,))
                 row = cursor.fetchone()
-
                 if row and row[0] == 'Manager':
                     cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'Manager'")
                     manager_count = cursor.fetchone()[0]
-
                     if manager_count <= 1:
-                        print("Error: Cannot delete the last Manager account.")
+                        print("Cannot delete the last Manager account.")
                         return False
-                # -------------------------------------------------------
 
                 cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
                 conn.commit()
                 return True
             except Error as e:
-                print(f"Error deleting user: {e}")
+                print(f"cant delete user: {e}")
                 return False
             finally:
                 conn.close()
         return False
 
-    # ================= INVENTORY MANAGEMENT =================
+    # manager inventory
     def get_inventory_items(self):
         items = []
         conn = self.main_db.get_connection()
@@ -96,15 +91,13 @@ class ManagerDB:
         return items
 
     def get_expiring_products_in_stock(self, days_threshold=30):
-        """
-        Fetches items that have stock > 0 AND are expiring within 'days_threshold' (or expired).
-        """
+        #get items that have more than 1 stock and are expiring
         items = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor(dictionary=True)
-                # SQL LOGIC:
+                # explanation oh
                 # 1. stock > 0: Only available items (Perishables view Requirement)
                 # 2. expiry_date IS NOT NULL: Must have an expiry
                 # 3. expiry_date <= ...: Date is today or in the past (expired) OR within next 30 days
@@ -200,7 +193,7 @@ class ManagerDB:
         return False
 
     def get_all_categories(self):
-        """Fetches unique categories for the dropdown to prevent duplicates."""
+      #Get unique category / same name same spelled category capital or not
         categories = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -217,7 +210,7 @@ class ManagerDB:
                 conn.close()
         return categories
 
-    # ================= DASHBOARD & ANALYTICS =================
+    # analyticss
     def get_dashboard_stats(self):
         conn = self.main_db.get_connection()
         stats = DashboardStats(0, 0, 0)
@@ -226,12 +219,12 @@ class ManagerDB:
             try:
                 cursor = conn.cursor(dictionary=True)
 
-                # 1. Revenue
+                #Revenue
                 cursor.execute("SELECT SUM(total_amount) as rev FROM sales WHERE DATE(sale_timestamp) = CURDATE()")
                 res_rev = cursor.fetchone()
                 revenue = res_rev['rev'] if res_rev and res_rev['rev'] else 0.0
 
-                # 2. Low Stock (UPDATED)
+                #Low Stock
                 # Count items where stock <= threshold BUT ignore items with 0 stock
                 cursor.execute("""
                     SELECT COUNT(*) as cnt 
@@ -241,8 +234,8 @@ class ManagerDB:
                 """)
                 low_stock = cursor.fetchone()['cnt']
 
-                # 3. Expiring Soon
-                # Also ignores items with 0 stock
+                # Expiring Soon
+                # gnores items with 0 stock
                 cursor.execute("""
                                SELECT COUNT(*) as cnt
                                FROM inventory
@@ -259,17 +252,11 @@ class ManagerDB:
         return stats
 
     def get_recent_sales(self, limit=10):
-        """
-        Fetches RECENT TRANSACTIONS from the sales table.
-        Returns: total_amount, items_count, cashier_name, sale_timestamp
-        """
         sales = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
             try:
                 cursor = conn.cursor(dictionary=True)
-
-                # FIX: Select directly from 'sales' table to get the Receipt Summary
                 query = """
                     SELECT 
                         total_amount, 
@@ -311,10 +298,8 @@ class ManagerDB:
         return items
 
 
-#================= REPORTING METHODS =================
-
     def get_sales_report_data(self, start_date, end_date):
-        """Fetches sales between dates for the report."""
+        #get date for reports
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -341,7 +326,7 @@ class ManagerDB:
         return data
 
     def get_inventory_valuation_data(self):
-        """Calculates total value of stock."""
+        #calculate total value sa stock
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -349,7 +334,7 @@ class ManagerDB:
                 cursor = conn.cursor(dictionary=True)
                 query = """
                 SELECT 
-                    id, name, category, stock, selling_price,
+                    id, name, category, stock, cost_price, selling_price,
                     (stock * selling_price) as total_value
                 FROM inventory
                 ORDER BY category, name
@@ -358,13 +343,13 @@ class ManagerDB:
                 data = cursor.fetchall()
                 cursor.close()
             except Error as e:
-                print(f"Error fetching inventory valuation: {e}")
+                print(f"cant grab inventory valuations: {e}")
             finally:
                 conn.close()
         return data
 
     def get_low_stock_data(self):
-        """Fetches items below threshold."""
+        #get items below threshold (always <=10)
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -380,13 +365,12 @@ class ManagerDB:
                 data = cursor.fetchall()
                 cursor.close()
             except Error as e:
-                print(f"Error fetching low stock: {e}")
+                print(f"Ecant grab low stocks: {e}")
             finally:
                 conn.close()
         return data
 
     def get_audit_log_data(self, start_date, end_date):
-        """Fetches audit logs between dates."""
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -406,3 +390,4 @@ class ManagerDB:
             finally:
                 conn.close()
         return data
+
