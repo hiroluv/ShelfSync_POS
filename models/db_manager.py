@@ -1,12 +1,46 @@
 from mysql.connector import Error
 from models.entities import User, InventoryItem, DashboardStats
+from models.user_model import UserModel  # Added for password hashing
 
-#Manager's side DB
+
+# Manager's side DB
 class ManagerDB:
     def __init__(self, db_manager):
         self.main_db = db_manager  # Access to get_connection()
 
-    # manage users
+    # --- USER MANAGEMENT ---
+
+    def authenticate_user(self, username, password):
+        """
+        Authenticates a user by name and password hash.
+        Moved here from DatabaseManager for better MVC separation.
+        """
+        conn = self.main_db.get_connection()
+        user_obj = None
+
+        if conn and conn.is_connected():
+            try:
+                cursor = conn.cursor(dictionary=True)
+
+                # 1. Fetch user by name
+                query = "SELECT id, name, role, password FROM users WHERE name = %s"
+                cursor.execute(query, (username,))
+                result = cursor.fetchone()
+
+                # 2. Verify password
+                if result:
+                    stored_hash = result['password']
+                    # Use the Model to verify the hash
+                    if UserModel.verify_password(password, stored_hash):
+                        user_obj = User(result['id'], result['name'], result['role'])
+
+            except Error as e:
+                print(f"Auth Error: {e}")
+            finally:
+                conn.close()
+
+        return user_obj
+
     def get_all_users(self):
         users = []
         conn = self.main_db.get_connection()
@@ -26,9 +60,14 @@ class ManagerDB:
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
             try:
+                # UPDATED: Hash the password before inserting into DB
+                hashed_pw = UserModel.hash_password(password)
+
                 cursor = conn.cursor()
                 query = "INSERT INTO users (name, password, role) VALUES (%s, %s, %s)"
-                cursor.execute(query, (name, password, role))
+
+                # Use hashed_pw instead of plain password
+                cursor.execute(query, (name, hashed_pw, role))
                 conn.commit()
                 return True
             except Error as e:
@@ -63,7 +102,7 @@ class ManagerDB:
                 conn.close()
         return False
 
-    # manager inventory
+    # --- INVENTORY MANAGEMENT ---
     def get_inventory_items(self):
         items = []
         conn = self.main_db.get_connection()
@@ -91,7 +130,7 @@ class ManagerDB:
         return items
 
     def get_expiring_products_in_stock(self, days_threshold=30):
-        #get items that have more than 1 stock and are expiring
+        # get items that have more than 1 stock and are expiring
         items = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -193,7 +232,7 @@ class ManagerDB:
         return False
 
     def get_all_categories(self):
-      #Get unique category / same name same spelled category capital or not
+        # Get unique category
         categories = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -210,7 +249,8 @@ class ManagerDB:
                 conn.close()
         return categories
 
-    # analyticss
+    # --- ANALYTICS & REPORTS ---
+
     def get_dashboard_stats(self):
         conn = self.main_db.get_connection()
         stats = DashboardStats(0, 0, 0)
@@ -219,13 +259,12 @@ class ManagerDB:
             try:
                 cursor = conn.cursor(dictionary=True)
 
-                #Revenue
+                # Revenue
                 cursor.execute("SELECT SUM(total_amount) as rev FROM sales WHERE DATE(sale_timestamp) = CURDATE()")
                 res_rev = cursor.fetchone()
                 revenue = res_rev['rev'] if res_rev and res_rev['rev'] else 0.0
 
-                #Low Stock
-                # Count items where stock <= threshold BUT ignore items with 0 stock
+                # Low Stock (Ignore 0 stock)
                 cursor.execute("""
                     SELECT COUNT(*) as cnt 
                     FROM inventory 
@@ -234,8 +273,7 @@ class ManagerDB:
                 """)
                 low_stock = cursor.fetchone()['cnt']
 
-                # Expiring Soon
-                # gnores items with 0 stock
+                # Expiring Soon (Ignore 0 stock)
                 cursor.execute("""
                                SELECT COUNT(*) as cnt
                                FROM inventory
@@ -252,6 +290,7 @@ class ManagerDB:
         return stats
 
     def get_recent_sales(self, limit=10):
+        # UPDATED: Added payment_method to the select
         sales = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -262,7 +301,8 @@ class ManagerDB:
                         total_amount, 
                         items_count, 
                         cashier_name, 
-                        sale_timestamp 
+                        sale_timestamp,
+                        payment_method 
                     FROM sales 
                     ORDER BY sale_timestamp DESC 
                     LIMIT %s
@@ -297,9 +337,8 @@ class ManagerDB:
                 conn.close()
         return items
 
-
     def get_sales_report_data(self, start_date, end_date):
-        #get date for reports
+        # UPDATED: Added payment_method and reference_number
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -311,7 +350,9 @@ class ManagerDB:
                     sale_timestamp as date,
                     cashier_name as cashier,
                     items_count,
-                    total_amount
+                    total_amount,
+                    payment_method,
+                    reference_number
                 FROM sales 
                 WHERE DATE(sale_timestamp) BETWEEN %s AND %s
                 ORDER BY sale_timestamp DESC
@@ -326,7 +367,7 @@ class ManagerDB:
         return data
 
     def get_inventory_valuation_data(self):
-        #calculate total value sa stock
+        # calculate total value sa stock
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -349,7 +390,7 @@ class ManagerDB:
         return data
 
     def get_low_stock_data(self):
-        #get items below threshold (always <=10)
+        # get items below threshold (always <=10)
         data = []
         conn = self.main_db.get_connection()
         if conn and conn.is_connected():
@@ -390,4 +431,3 @@ class ManagerDB:
             finally:
                 conn.close()
         return data
-

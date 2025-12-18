@@ -6,7 +6,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.linecharts import HorizontalLineChart
-from reportlab.graphics.charts.barcharts import VerticalBarChart, HorizontalBarChart
+from reportlab.graphics.charts.barcharts import HorizontalBarChart
 from reportlab.graphics.widgets.markers import makeMarker
 
 
@@ -122,6 +122,7 @@ class PDFReportGenerator:
             ]))
             card_cells.append(inner_t)
 
+        # Layout cards in a single row
         container = Table([card_cells], colWidths=[1.7 * inch] * len(card_cells))
         container.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
@@ -158,8 +159,6 @@ class PDFReportGenerator:
         # Line Style
         lc.lines[0].strokeColor = colors.HexColor("#1E3A8A")
         lc.lines[0].strokeWidth = 2
-
-        # --- FIX: Use makeMarker instead of tuple ---
         lc.lines[0].symbol = makeMarker('FilledCircle')
         lc.lines[0].symbol.size = 4
         lc.lines[0].symbol.fillColor = colors.HexColor("#0891B2")
@@ -171,15 +170,20 @@ class PDFReportGenerator:
         self.elements.append(drawing)
         self.elements.append(Spacer(1, 0.2 * inch))
 
-    def _create_horizontal_bar_chart(self, data, title="Inventory Value by Category"):
+    def _create_horizontal_bar_chart(self, data, title="Analysis"):
+        """
+        Creates a horizontal bar chart.
+        :param data: List of tuples/lists [(Category Name, Value), ...]
+        """
         if not data: return Spacer(1, 1)
 
-        # Sort descending
+        # Sort ascending (so the biggest bar is at the top in this chart lib usually)
+        # Note: ReportLab HorizontalBarChart draws bottom-to-top by default index
         sorted_data = sorted(data, key=lambda x: x[1])
         names = [x[0] for x in sorted_data]
         values = [x[1] for x in sorted_data]
 
-        chart_height = 50 + (len(names) * 20)
+        chart_height = 50 + (len(names) * 25)
         drawing = Drawing(400, chart_height)
 
         bc = HorizontalBarChart()
@@ -194,7 +198,9 @@ class PDFReportGenerator:
         bc.categoryAxis.labels.boxAnchor = 'e'
         bc.categoryAxis.labels.dx = -5
         bc.categoryAxis.labels.fontName = 'Helvetica'
-        bc.bars[0].fillColor = colors.HexColor("#0891B2")
+
+        # Bar Color (Teal)
+        bc.bars[0].fillColor = colors.HexColor("#0D9488")  # Teal 600
 
         drawing.add(bc)
 
@@ -237,7 +243,14 @@ class PDFReportGenerator:
 
     # --- MAIN REPORT SECTIONS ---
 
-    def add_sales_section(self, data, start_date, end_date):
+    def add_sales_section(self, data, start_date, end_date, top_products=None):
+        """
+        Generates the Sales Report section.
+        :param data: List of sales transactions
+        :param start_date: Filter start date
+        :param end_date: Filter end date
+        :param top_products: Optional list of top selling items [{'name':..., 'total_qty':...}]
+        """
         if self.elements: self.elements.append(PageBreak())
 
         self._add_report_metadata("Sales Report", start_date, end_date)
@@ -246,7 +259,7 @@ class PDFReportGenerator:
             self.elements.append(Paragraph("No sales data found.", self.styles['ReportBody']))
             return
 
-        # Metrics
+        # 1. KPI CARDS
         total_rev = sum(float(x['total_amount']) for x in data)
         txn_count = len(data)
         net_sales = total_rev / 1.12
@@ -259,16 +272,56 @@ class PDFReportGenerator:
             ("Transactions", str(txn_count))
         ])
 
-        # Chart: Sales Trend (Using Line Chart)
+        # 2. TOP PRODUCTS SECTION (Chart + Table)
+        if top_products:
+            self.elements.append(Spacer(1, 0.2 * inch))
+            self.elements.append(Paragraph("<b>Top Selling Products</b>", self.styles['SectionHeader']))
+
+            # 2a. Horizontal Bar Chart
+            chart_data = []
+            for item in top_products:
+                qty = float(item.get('total_qty', 0))
+                # Truncate long names for chart labels
+                raw_name = item.get('name', 'Unknown')
+                name = raw_name[:15] + "..." if len(raw_name) > 15 else raw_name
+                chart_data.append((name, qty))
+
+            self._create_horizontal_bar_chart(chart_data, title="Top 5 Best Sellers (By Quantity)")
+
+            # 2b. Top Products Data Table (For clearer reading)
+            self.elements.append(Spacer(1, 0.1 * inch))
+            tp_headers = ['Rank', 'Product Name', 'Quantity Sold']
+            tp_table_data = [tp_headers]
+
+            for index, item in enumerate(top_products, 1):
+                tp_table_data.append([
+                    str(index),
+                    item.get('name', 'Unknown'),
+                    str(item.get('total_qty', 0))
+                ])
+
+            # Render Top Products Table
+            self.elements.append(self._create_data_table(
+                tp_table_data,
+                [0.8 * inch, 3.5 * inch, 1.5 * inch],
+                ['CENTER', 'LEFT', 'CENTER']
+            ))
+            self.elements.append(Spacer(1, 0.3 * inch))
+
+        # 3. SALES TREND CHART
         chart_data = {}
         for row in data:
             dt_str = row['date'].strftime("%m-%d") if hasattr(row['date'], 'strftime') else str(row['date'])[:5]
             chart_data[dt_str] = chart_data.get(dt_str, 0) + float(row['total_amount'])
-        sorted_chart = sorted(chart_data.items())[-7:]
+
+        # Sort by date and take last 7 entries
+        sorted_chart = sorted(chart_data.items())
+        if len(sorted_chart) > 7:
+            sorted_chart = sorted_chart[-7:]
 
         self._create_line_chart(sorted_chart, title="Revenue Trend")
 
-        # Detailed Table
+        # 4. DETAILED TRANSACTIONS TABLE
         self.elements.append(Paragraph("<b>Transaction Details</b>", self.styles['SectionHeader']))
         headers = ['Inv #', 'Date', 'Cashier', 'Total', 'Net', 'Tax']
         table_data = [headers]
@@ -314,29 +367,23 @@ class PDFReportGenerator:
                 ("Unique SKUs", str(len(data)))
             ])
 
-            # Chart: Category Value (Horizontal Bar)
+            # Chart: Category Value
             cat_data = {}
             for row in data:
                 cat = row['category']
                 val = float(row['total_value'])
                 cat_data[cat] = cat_data.get(cat, 0) + val
-            self._create_horizontal_bar_chart(list(cat_data.items()))
+            self._create_horizontal_bar_chart(list(cat_data.items()), title="Inventory Value by Category")
 
-            # Table with Cost and Margin
+            # Table
             headers = ['Name', 'Stock', 'Cost', 'Price', 'Margin', 'Value']
             table_data = [headers]
 
             for row in data:
-                # Handle potential missing cost_price if DB wasn't updated
                 cost = float(row.get('cost_price', 0))
                 price = float(row['selling_price'])
                 stock = int(row['stock'])
-
-                if price > 0:
-                    margin = ((price - cost) / price) * 100
-                    margin_str = f"{margin:.0f}%"
-                else:
-                    margin_str = "0%"
+                margin_str = f"{((price - cost) / price * 100):.0f}%" if price > 0 else "0%"
 
                 table_data.append([
                     row['name'][:25],
@@ -364,13 +411,7 @@ class PDFReportGenerator:
                 thresh = int(row['threshold'])
                 status = "CRITICAL" if stock == 0 else "LOW"
 
-                table_data.append([
-                    row['name'],
-                    row['category'],
-                    str(stock),
-                    str(thresh),
-                    status
-                ])
+                table_data.append([row['name'], row['category'], str(stock), str(thresh), status])
 
             self.elements.append(self._create_data_table(
                 table_data,

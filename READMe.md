@@ -1,33 +1,42 @@
 /ShelfSync
 │
-├── /assets              # (Optional) Store your logos/icons here
+├── /assets
 │   ├── logo.png
 │   └── icons/
 │
-├── /views               # THE "VIEW" (All your .ui files)
-│   ├── login_windows.ui         # The starting point
-│   ├── dashboard_window.ui      # The Main Shell (Sidebar + Stack)
-│   ├── inventory_window.ui      # Inventory Page
-│   ├── item_sale.ui             # <-- The Single Row Widget for Dashboard
-│   ├── cashier_window.ui        # Cashier Interface
-│   ├── perishables_window.ui    # FIFO Tracking Page
-│   ├── reports_window.ui        # Analytics Page
-│   ├── user_accounts_window.ui  # User Management Page
-│   └── add_stock_dialog.ui      # Popup for adding items
+├── /views               # THE "VIEW" (UI Files)
+│   ├── login_windows.ui
+│   ├── dashboard_window.ui
+│   ├── inventory_window.ui
+│   ├── cashier_window.ui
+│   ├── reports_window.ui
+│   ├── user_accounts_window.ui
+│   ├── perishables_window.ui
+│   ├── item_sale.ui             # Row widget for Sales list
+│   ├── item_user.ui             # Row widget for User list
+│   ├── add_stock_dialog.ui      # Popup for Inventory
+│   └── add_user_dialog.ui       # Popup for Adding Users
 │
-├── /controllers         # THE "CONTROLLER" (Python Logic)
+├── /controllers         # THE "CONTROLLER" (Logic)
 │   ├── __init__.py
-│   ├── main_controller.py       # Manages the Window Stack & Sidebar Navigation
-│   ├── login_controller.py      # Handles Auth & Switch between Manager/Cashier
-│   ├── dashboard_controller.py  # Calculates Revenue, Stock Alerts & Populates List
-│   ├── inventory_controller.py  # Handles Table logic & "Add Stock" Dialog
-│   ├── cashier_controller.py    # Handles Search, Cart, & Checkout logic
-│   ├── perishables_controller.py# Handles Expiry Dates & Batch logic
-│   ├── reports_controller.py    # Generates Charts & Financial Math
-│   └── users_controller.py      # Handles Adding/Removing Users
+│   ├── main_controller.py
+│   ├── login_controller.py
+│   ├── dashboard_controller.py
+│   ├── inventory_controller.py
+│   ├── cashier_controller.py
+│   ├── reports_controller.py
+│   └── users_controller.py      # Handles User UI logic
 │
-├── /models              # THE "MODEL" (Database Code)
+├── /models              # THE "MODEL" (Data & Logic)
 │   ├── __init__.py
-│   └── database_manager.py      # All SQL queries (SELECT, INSERT, UPDATE) go here
+│   ├── database_manager.py      # The central connection hub (Delegator)
+│   ├── db_manager.py            # Manager SQL (Users, Inventory, Audit Logs)
+│   ├── db_cashier.py            # Cashier SQL (Products, Transactions)
+│   ├── user_model.py            # Business Logic (Password Hashing & Verification)
+│   └── entities.py              # Data Classes (User, InventoryItem object definitions)
 │
-└── main.py              # Entry point (Run this file)
+├── /utils               # HELPER SCRIPTS
+│   ├── ui_helper.py             # Shadows, overlays, and icon helpers
+│   └── toast_notification.py    # Custom popup notifications
+│
+└── main.py              # Entry point (AppOrchestrator)

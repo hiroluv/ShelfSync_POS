@@ -1,6 +1,5 @@
 import mysql.connector
 from mysql.connector import Error
-from models.entities import User
 from models.db_cashier import CashierDB
 from models.db_manager import ManagerDB
 
@@ -18,7 +17,7 @@ class DatabaseManager:
         self.manager_db = ManagerDB(self)
 
     def get_connection(self):
-        #Centralized connection
+        # Centralized connection
         try:
             return mysql.connector.connect(**self.config)
         except Error as e:
@@ -26,31 +25,17 @@ class DatabaseManager:
             return None
 
     def authenticate_user(self, username, password):
-        conn = self.get_connection()
-        user_obj = None
-        if conn and conn.is_connected():
-            try:
-                cursor = conn.cursor(dictionary=True)
-                # In production,
-                query = "SELECT id, name, role FROM users WHERE name = %s AND password = %s"
-                cursor.execute(query, (username, password))
-                result = cursor.fetchone()
+        # UPDATED: Delegate authentication to ManagerDB
+        # This keeps the logic in one place (ManagerDB)
+        return self.manager_db.authenticate_user(username, password)
 
-                # Return User Obj
-                if result:
-                    user_obj = User(result['id'], result['name'], result['role'])
-            except Error as e:
-                print(f"Auth Error: {e}")
-            finally:
-                conn.close()
-        return user_obj
-
-    #Cashier
+    # Cashier
     def get_all_products(self):
         return self.cashier_db.get_all_products()
 
-    def process_transaction(self, cart, total, cashier):
-        return self.cashier_db.process_transaction(cart, total, cashier)
+    def process_transaction(self, cart_dict, total_amount, cashier_name, payment_info=None):
+        # Pass the payment_info to the cashier_db
+        return self.cashier_db.process_transaction(cart_dict, total_amount, cashier_name, payment_info)
 
     # --- Manager/Inventory
     def get_all_users(self):

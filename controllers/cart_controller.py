@@ -4,8 +4,11 @@ from PyQt6.QtGui import QColor
 from PyQt6.QtCore import Qt
 from PyQt6 import uic
 import os
+from datetime import datetime  # <--- NEW IMPORT
 
 from utils.toast_notification import show_toast
+from controllers.payment_controller import PaymentController
+from utils.receipt_manager import ReceiptManager  # <--- NEW IMPORT
 
 
 class Cart_Controller:
@@ -21,7 +24,7 @@ class Cart_Controller:
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.scroll_area.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
 
-        #Container
+        # Container
         self.container_widget = QWidget()
         self.container_widget.setStyleSheet("background-color: transparent;")
         self.container_layout = QVBoxLayout(self.container_widget)
@@ -58,7 +61,7 @@ class Cart_Controller:
 
         if product_id in self.cart_data:
             self.cart_data[product_id] = new_qty
-        self.render_cart(all_products) #refesh ang cart every add
+        self.render_cart(all_products)  # refresh cart every add
 
     def render_cart(self, all_products):
         self.clear_layout(self.container_layout)
@@ -66,7 +69,7 @@ class Cart_Controller:
         total_items = 0
         is_empty = len(self.cart_data) == 0
 
-        # Update Button State depende sa sulod sa card
+        # Update Button State
         self.update_checkout_button_state()
         # empty state
         if hasattr(self.parent, 'lbl_empty_title'):
@@ -82,7 +85,10 @@ class Cart_Controller:
 
         # Render Rows
         base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Added fallback check for robustness
         row_ui_path = os.path.join(base_path, 'views', 'item_cart_row.ui')
+        if not os.path.exists(row_ui_path):
+            row_ui_path = os.path.join(base_path, 'views', 'ui', 'item_cart_row.ui')
 
         for pid, qty in self.cart_data.items():
             product = next((p for p in all_products if p.id == pid), None)
@@ -112,7 +118,7 @@ class Cart_Controller:
                 self.container_layout.addWidget(row_widget)
 
             except Exception as e:
-                print(f"dili mag loadd bro: {e}")
+                print(f"Error loading row: {e}")
 
         self.container_layout.addStretch()
 
@@ -121,14 +127,12 @@ class Cart_Controller:
         self._update_totals(subtotal, vat, grand_total, total_items)
 
     def update_checkout_button_state(self):
-        #make the process button blue when cart is True
         if not hasattr(self.parent, 'btn_checkout'): return
 
         btn = self.parent.btn_checkout
         is_empty = len(self.cart_data) == 0
 
         if is_empty:
-            # grey with blue shadow when empty
             btn.setEnabled(False)
             btn.setStyleSheet("""
                 QPushButton {
@@ -140,18 +144,14 @@ class Cart_Controller:
                     border: 1px solid #E2E8F0;
                 }
             """)
-
-            #shadowssss
             shadow = QGraphicsDropShadowEffect()
-            shadow.setBlurRadius(20)  # Standard soft blur
-            shadow.setOffset(0, 8)  # Falling shadow offset
+            shadow.setBlurRadius(20)
+            shadow.setOffset(0, 8)
             color = QColor("#06B6D4")
-            color.setAlpha(100)  #transparency sa shadow
+            color.setAlpha(100)
             shadow.setColor(color)
-
             btn.setGraphicsEffect(shadow)
         else:
-            # ACTIVE STATE
             btn.setEnabled(True)
             btn.setStyleSheet("""
                 QPushButton {
@@ -174,22 +174,67 @@ class Cart_Controller:
         if hasattr(self.parent, 'lbl_cart_count'): self.parent.lbl_cart_count.setText(f"{count} Items")
 
     def process_checkout(self, all_products, user_name):
-        if not self.cart_data: return
+        if not self.cart_data: return False
 
-        subtotal = sum(
-            self.cart_data[pid] * next((p.selling_price for p in all_products if p.id == pid), 0)
-            for pid in self.cart_data
-        )
-        grand_total = subtotal * 1.12
+        #Calculate Totals & Prep Receipt Data
+        subtotal = 0.0
+        items_list = [] #collect for receipt
 
-        success = self.db.process_transaction(self.cart_data, grand_total, user_name)
-        if success:
-            show_toast(self.parent, "Transaction Successful!", type="success")
-            self.cart_data = {}
-            self.render_cart(all_products)
-            return True
-        else:
-            show_toast(self.parent, "Transaction Failed.", type="error")
+        for pid, qty in self.cart_data.items():
+            product = next((p for p in all_products if p.id == pid), None)
+            if product:
+                price = product.selling_price
+                subtotal += price * qty
+                items_list.append({
+                    'name': product.name,
+                    'qty': qty,
+                    'price': price
+                })
+
+        vat = subtotal * 0.12
+        grand_total = subtotal + vat
+
+        #open paymen dial
+        try:
+            dialog = PaymentController(self.parent, grand_total)
+            if dialog.exec():
+                # when cashier confirms the pay
+                payment_info = dialog.payment_details
+
+                # save payments to DB
+                success = self.db.process_transaction(self.cart_data, grand_total, user_name, payment_info)
+
+                if success:
+                    show_toast(self.parent, "Transaction Successful!", type="success")
+
+                    #this will pass data to generate receipt
+                    try:
+                        receipt_mgr = ReceiptManager()
+                        receipt_data = {
+                            'sale_id': 'NEW',  # Ideally this comes from DB return
+                            'cashier': user_name,
+                            'items': items_list,
+                            'subtotal': subtotal,
+                            'vat': vat,
+                            'total': grand_total,
+                            'payment': payment_info,
+                            'date': datetime.now()
+                        }
+                        receipt_mgr.generate_receipt(receipt_data)
+                    except Exception as e:
+                        print(f"Receipt Error: {e}")
+                        show_toast(self.parent, "Receipt Printing Failed", type="warning")
+
+                    # 6. Clear Cart
+                    self.cart_data = {}
+                    self.render_cart(all_products)
+                    return True
+                else:
+                    show_toast(self.parent, "Transaction Failed.", type="error")
+                    return False
+        except Exception as e:
+            print(f"Payment Error: {e}")
+            show_toast(self.parent, "Error processing payment", type="error")
             return False
 
     def clear_layout(self, layout):
