@@ -1,10 +1,12 @@
 === PROJECT STRUCTURE ===
 ShelfSync_POS/
+    All_Reports_2025-12-19.pdf
     export_project.py
     latest_receipt.pdf
     main.py
     project_code_dump.txt
     READMe.md
+    Sales_Report_2025-12-19.pdf
     controllers/
         add_stock_controller.py
         audit_controller.py
@@ -30,6 +32,7 @@ ShelfSync_POS/
         user_model.py
         __init__.py
     Reports/
+        Sales_Report_2025-12-19.pdf
     utils/
         pdf_generator.py
         receipt_manager.py
@@ -509,7 +512,7 @@ class Cart_Controller:
         vat = subtotal * 0.12
         grand_total = subtotal + vat
         self._update_totals(subtotal, vat, grand_total, total_items)
-
+#MOVE TO VIEWS
     def update_checkout_button_state(self):
         if not hasattr(self.parent, 'btn_checkout'): return
 
@@ -560,9 +563,9 @@ class Cart_Controller:
     def process_checkout(self, all_products, user_name):
         if not self.cart_data: return False
 
-        # 1. Calculate Totals & Prep Receipt Data
+        #Calculate Totals & Prep Receipt Data
         subtotal = 0.0
-        items_list = []  # <--- NEW: Collection for receipt
+        items_list = [] #collect for receipt
 
         for pid, qty in self.cart_data.items():
             product = next((p for p in all_products if p.id == pid), None)
@@ -578,20 +581,20 @@ class Cart_Controller:
         vat = subtotal * 0.12
         grand_total = subtotal + vat
 
-        # 2. OPEN PAYMENT DIALOG
+        #open paymen dial
         try:
             dialog = PaymentController(self.parent, grand_total)
             if dialog.exec():
-                # 3. User Confirmed Payment
+                # when cashier confirms the pay
                 payment_info = dialog.payment_details
 
-                # 4. Save to DB with payment info
+                # save payments to DB
                 success = self.db.process_transaction(self.cart_data, grand_total, user_name, payment_info)
 
                 if success:
                     show_toast(self.parent, "Transaction Successful!", type="success")
 
-                    # 5. --- GENERATE RECEIPT (NEW) ---
+                    #this will pass data to generate receipt
                     try:
                         receipt_mgr = ReceiptManager()
                         receipt_data = {
@@ -1157,12 +1160,10 @@ class InventoryController:
                 btn = getattr(self.view, btn_name)
                 btn.active_style = style_active
                 btn.default_style = style_default
-                # Reset to default initially (logic handles activation)
+                # Reset to default
                 btn.setStyleSheet(style_default)
 
     def setup_connections(self):
-        """Connect buttons and inputs."""
-
         # Main Actions
         if hasattr(self.view, 'btn_add_stock'):
             self.view.btn_add_stock.clicked.connect(self.open_add_stock_dialog)
@@ -1204,7 +1205,7 @@ class InventoryController:
         return getattr(user_data, 'name', 'Unknown User')
 
     def refresh_data(self, filter_type="all"):
-        #Refreshes the inventory list based on filters AND search text."""
+        #Refreshes the inventory list based on filters"""
         if not hasattr(self.view, 'layout_inventory_list'):
             return
 
@@ -1240,7 +1241,7 @@ class InventoryController:
 
             filtered_products.append(p)
 
-        # Sort (Newest First)
+        # Sort
         filtered_products.sort(key=lambda x: x.id, reverse=True)
 
         # === RENDER ROWS ===
@@ -1257,7 +1258,7 @@ class InventoryController:
                 if hasattr(row_widget, 'lbl_stock'): row_widget.lbl_stock.setText(str(product.stock))
                 if hasattr(row_widget, 'lbl_price'): row_widget.lbl_price.setText(f"₱{product.selling_price:,.2f}")
 
-                # Status Badge
+                # Status Badge(THIS IS LOGIC BECAUSE IT IS CONDITIONS)
                 if hasattr(row_widget, 'lbl_status'):
                     if product.stock == 0:
                         row_widget.lbl_status.setText("Out of Stock")
@@ -1284,10 +1285,6 @@ class InventoryController:
                 print(f"Error loading row: {e}")
 
     def handle_search(self, text):
-        """Called when text changes in search bar."""
-        # We assume the user wants to search across 'all' or the current view.
-        # For simplicity, we refresh current view.
-        # Ideally, you check which button is active.
         filter_mode = "all"
         if self.active_filter_button == getattr(self.view, 'btn_filter_low', None):
             filter_mode = "low"
@@ -2463,8 +2460,6 @@ import mysql.connector
 from mysql.connector import Error
 from models.db_cashier import CashierDB
 from models.db_manager import ManagerDB
-# UserModel and User are no longer strictly needed here since ManagerDB handles them,
-# but you can keep them if you plan to add more logic later.
 
 
 class DatabaseManager:
@@ -3165,24 +3160,19 @@ import bcrypt
 
 
 class UserModel:
-    """
-    Handles business logic for Users, specifically authentication
-    and data security, separate from raw DB operations.
-    """
 
     @staticmethod
     def hash_password(plain_password):
-        """Hashes a plain text password using bcrypt."""
-        # bcrypt requires bytes, so we encode the string
+        # bcrypt requires bytes so encode the string
         password_bytes = plain_password.encode('utf-8')
-        # Generate salt and hash
+        # Generate hash
         hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
-        # Return as string for database storage
+        # Return as string for dataB
         return hashed.decode('utf-8')
 
     @staticmethod
     def verify_password(plain_password, hashed_password):
-        """Checks a plain password against the stored hash."""
+        #checks plain password input against the hash thingy
         if not hashed_password:
             return False
 
@@ -3191,7 +3181,7 @@ class UserModel:
             hashed_bytes = hashed_password.encode('utf-8')
             return bcrypt.checkpw(plain_bytes, hashed_bytes)
         except ValueError:
-            # Handle cases where the hash in DB might be invalid/legacy
+            #handle stuff when hash is invalid
             return False
 
 ==================================================
@@ -3210,7 +3200,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.linecharts import HorizontalLineChart
-from reportlab.graphics.charts.barcharts import VerticalBarChart, HorizontalBarChart
+from reportlab.graphics.charts.barcharts import HorizontalBarChart
 from reportlab.graphics.widgets.markers import makeMarker
 
 
@@ -3326,6 +3316,7 @@ class PDFReportGenerator:
             ]))
             card_cells.append(inner_t)
 
+        # Layout cards in a single row
         container = Table([card_cells], colWidths=[1.7 * inch] * len(card_cells))
         container.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
@@ -3362,8 +3353,6 @@ class PDFReportGenerator:
         # Line Style
         lc.lines[0].strokeColor = colors.HexColor("#1E3A8A")
         lc.lines[0].strokeWidth = 2
-
-        # --- FIX: Use makeMarker instead of tuple ---
         lc.lines[0].symbol = makeMarker('FilledCircle')
         lc.lines[0].symbol.size = 4
         lc.lines[0].symbol.fillColor = colors.HexColor("#0891B2")
@@ -3375,15 +3364,20 @@ class PDFReportGenerator:
         self.elements.append(drawing)
         self.elements.append(Spacer(1, 0.2 * inch))
 
-    def _create_horizontal_bar_chart(self, data, title="Inventory Value by Category"):
+    def _create_horizontal_bar_chart(self, data, title="Analysis"):
+        """
+        Creates a horizontal bar chart.
+        :param data: List of tuples/lists [(Category Name, Value), ...]
+        """
         if not data: return Spacer(1, 1)
 
-        # Sort descending
+        # Sort ascending (so the biggest bar is at the top in this chart lib usually)
+        # Note: ReportLab HorizontalBarChart draws bottom-to-top by default index
         sorted_data = sorted(data, key=lambda x: x[1])
         names = [x[0] for x in sorted_data]
         values = [x[1] for x in sorted_data]
 
-        chart_height = 50 + (len(names) * 20)
+        chart_height = 50 + (len(names) * 25)
         drawing = Drawing(400, chart_height)
 
         bc = HorizontalBarChart()
@@ -3398,7 +3392,9 @@ class PDFReportGenerator:
         bc.categoryAxis.labels.boxAnchor = 'e'
         bc.categoryAxis.labels.dx = -5
         bc.categoryAxis.labels.fontName = 'Helvetica'
-        bc.bars[0].fillColor = colors.HexColor("#0891B2")
+
+        # Bar Color (Teal)
+        bc.bars[0].fillColor = colors.HexColor("#0D9488")  # Teal 600
 
         drawing.add(bc)
 
@@ -3441,7 +3437,14 @@ class PDFReportGenerator:
 
     # --- MAIN REPORT SECTIONS ---
 
-    def add_sales_section(self, data, start_date, end_date):
+    def add_sales_section(self, data, start_date, end_date, top_products=None):
+        """
+        Generates the Sales Report section.
+        :param data: List of sales transactions
+        :param start_date: Filter start date
+        :param end_date: Filter end date
+        :param top_products: Optional list of top selling items [{'name':..., 'total_qty':...}]
+        """
         if self.elements: self.elements.append(PageBreak())
 
         self._add_report_metadata("Sales Report", start_date, end_date)
@@ -3450,7 +3453,7 @@ class PDFReportGenerator:
             self.elements.append(Paragraph("No sales data found.", self.styles['ReportBody']))
             return
 
-        # Metrics
+        # 1. KPI CARDS
         total_rev = sum(float(x['total_amount']) for x in data)
         txn_count = len(data)
         net_sales = total_rev / 1.12
@@ -3463,16 +3466,56 @@ class PDFReportGenerator:
             ("Transactions", str(txn_count))
         ])
 
-        # Chart: Sales Trend (Using Line Chart)
+        # 2. TOP PRODUCTS SECTION (Chart + Table)
+        if top_products:
+            self.elements.append(Spacer(1, 0.2 * inch))
+            self.elements.append(Paragraph("<b>Top Selling Products</b>", self.styles['SectionHeader']))
+
+            # 2a. Horizontal Bar Chart
+            chart_data = []
+            for item in top_products:
+                qty = float(item.get('total_qty', 0))
+                # Truncate long names for chart labels
+                raw_name = item.get('name', 'Unknown')
+                name = raw_name[:15] + "..." if len(raw_name) > 15 else raw_name
+                chart_data.append((name, qty))
+
+            self._create_horizontal_bar_chart(chart_data, title="Top 5 Best Sellers (By Quantity)")
+
+            # 2b. Top Products Data Table (For clearer reading)
+            self.elements.append(Spacer(1, 0.1 * inch))
+            tp_headers = ['Rank', 'Product Name', 'Quantity Sold']
+            tp_table_data = [tp_headers]
+
+            for index, item in enumerate(top_products, 1):
+                tp_table_data.append([
+                    str(index),
+                    item.get('name', 'Unknown'),
+                    str(item.get('total_qty', 0))
+                ])
+
+            # Render Top Products Table
+            self.elements.append(self._create_data_table(
+                tp_table_data,
+                [0.8 * inch, 3.5 * inch, 1.5 * inch],
+                ['CENTER', 'LEFT', 'CENTER']
+            ))
+            self.elements.append(Spacer(1, 0.3 * inch))
+
+        # 3. SALES TREND CHART
         chart_data = {}
         for row in data:
             dt_str = row['date'].strftime("%m-%d") if hasattr(row['date'], 'strftime') else str(row['date'])[:5]
             chart_data[dt_str] = chart_data.get(dt_str, 0) + float(row['total_amount'])
-        sorted_chart = sorted(chart_data.items())[-7:]
+
+        # Sort by date and take last 7 entries
+        sorted_chart = sorted(chart_data.items())
+        if len(sorted_chart) > 7:
+            sorted_chart = sorted_chart[-7:]
 
         self._create_line_chart(sorted_chart, title="Revenue Trend")
 
-        # Detailed Table
+        # 4. DETAILED TRANSACTIONS TABLE
         self.elements.append(Paragraph("<b>Transaction Details</b>", self.styles['SectionHeader']))
         headers = ['Inv #', 'Date', 'Cashier', 'Total', 'Net', 'Tax']
         table_data = [headers]
@@ -3518,29 +3561,23 @@ class PDFReportGenerator:
                 ("Unique SKUs", str(len(data)))
             ])
 
-            # Chart: Category Value (Horizontal Bar)
+            # Chart: Category Value
             cat_data = {}
             for row in data:
                 cat = row['category']
                 val = float(row['total_value'])
                 cat_data[cat] = cat_data.get(cat, 0) + val
-            self._create_horizontal_bar_chart(list(cat_data.items()))
+            self._create_horizontal_bar_chart(list(cat_data.items()), title="Inventory Value by Category")
 
-            # Table with Cost and Margin
+            # Table
             headers = ['Name', 'Stock', 'Cost', 'Price', 'Margin', 'Value']
             table_data = [headers]
 
             for row in data:
-                # Handle potential missing cost_price if DB wasn't updated
                 cost = float(row.get('cost_price', 0))
                 price = float(row['selling_price'])
                 stock = int(row['stock'])
-
-                if price > 0:
-                    margin = ((price - cost) / price) * 100
-                    margin_str = f"{margin:.0f}%"
-                else:
-                    margin_str = "0%"
+                margin_str = f"{((price - cost) / price * 100):.0f}%" if price > 0 else "0%"
 
                 table_data.append([
                     row['name'][:25],
@@ -3568,13 +3605,7 @@ class PDFReportGenerator:
                 thresh = int(row['threshold'])
                 status = "CRITICAL" if stock == 0 else "LOW"
 
-                table_data.append([
-                    row['name'],
-                    row['category'],
-                    str(stock),
-                    str(thresh),
-                    status
-                ])
+                table_data.append([row['name'], row['category'], str(stock), str(thresh), status])
 
             self.elements.append(self._create_data_table(
                 table_data,
@@ -3621,69 +3652,76 @@ from reportlab.lib.units import mm
 import os
 import subprocess
 import platform
+
 from datetime import datetime
 
 
 class ReceiptManager:
     def __init__(self):
         self.width = 80 * mm  # Standard Thermal Printer Width (80mm)
-        self.height = 200 * mm  # Dynamic height in a real app, fixed for now
+        self.height = 200 * mm  # Total height
         self.file_name = "latest_receipt.pdf"
 
+        # Determine paths for assets relative to this file
+        # Assuming receipt_manager.py is in /utils or /controllers and logo is in /assets
+        self.base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.logo_path = os.path.join(self.base_path, 'assets', 'logo.png')
+
     def generate_receipt(self, transaction_data):
-        """
-        transaction_data = {
-            'sale_id': 123,
-            'cashier': 'Name',
-            'items': [{'name': 'Soap', 'qty': 2, 'price': 50.00}],
-            'subtotal': 100.00,
-            'vat': 12.00,
-            'total': 112.00,
-            'payment': {'method': 'Cash', 'tendered': 120.00, 'change': 8.00},
-            'date': datetime.now()
-        }
-        """
         c = canvas.Canvas(self.file_name, pagesize=(self.width, self.height))
 
-        # 1. Header
+        # --- 1. Header with Logo ---
         y = self.height - 10 * mm
+
+        # Add Logo at the top center
+        if os.path.exists(self.logo_path):
+            logo_size = 15 * mm  # Adjusted size for 80mm receipt
+            c.drawImage(self.logo_path, (self.width - logo_size) / 2, y - 10 * mm,
+                        width=logo_size, height=logo_size, preserveAspectRatio=True, mask='auto')
+            y -= 18 * mm  # Push text down further to make room for logo
+        else:
+            y -= 2 * mm  # Minor spacing if no logo
+
         c.setFont("Helvetica-Bold", 12)
-        c.drawCentredString(self.width / 2, y, "ShelfSync POS")
+        c.drawCentredString(self.width / 2, y, "ShelfSync")
         y -= 5 * mm
         c.setFont("Helvetica", 8)
         c.drawCentredString(self.width / 2, y, "Davao City, Philippines")
-        y -= 5 * mm
-        c.drawCentredString(self.width / 2, y, "Tel: (082) 555-1234")
+        y -= 4 * mm
+        c.drawCentredString(self.width / 2, y, "Tel: (+63) 6767-6767")
 
-        y -= 10 * mm
+        y -= 6 * mm
         c.line(5 * mm, y, self.width - 5 * mm, y)  # Separator Line
         y -= 5 * mm
 
-        # 2. Transaction Info
-        c.setFont("Helvetica", 8)
+        # --- 2. Transaction Info ---
+        c.setFont("Helvetica", 7)  # Slightly smaller font for info
         c.drawString(5 * mm, y, f"Date: {transaction_data['date'].strftime('%Y-%m-%d %H:%M')}")
         y -= 4 * mm
         c.drawString(5 * mm, y, f"Cashier: {transaction_data['cashier']}")
         y -= 4 * mm
         c.drawString(5 * mm, y, f"Ref #: {transaction_data['sale_id']}")
 
-        y -= 6 * mm
+        y -= 5 * mm
         c.line(5 * mm, y, self.width - 5 * mm, y)
         y -= 5 * mm
 
-        # 3. Items Header
+        # --- 3. Items Header ---
         c.setFont("Helvetica-Bold", 8)
         c.drawString(5 * mm, y, "Item")
         c.drawString(45 * mm, y, "Qty")
         c.drawRightString(self.width - 5 * mm, y, "Price")
         y -= 5 * mm
 
-        # 4. Item List
+        # --- 4. Item List ---
         c.setFont("Helvetica", 8)
         for item in transaction_data['items']:
-            name = item['name'][:15] + "..." if len(item['name']) > 15 else item['name']
+            # Handle wrapping or truncating long names
+            raw_name = item['name']
+            name = raw_name[:18] + ".." if len(raw_name) > 18 else raw_name
+
             c.drawString(5 * mm, y, name)
-            c.drawString(48 * mm, y, str(item['qty']))
+            c.drawString(46 * mm, y, str(item['qty']))
             total_price = item['qty'] * item['price']
             c.drawRightString(self.width - 5 * mm, y, f"{total_price:,.2f}")
             y -= 4 * mm
@@ -3692,36 +3730,36 @@ class ReceiptManager:
         c.line(5 * mm, y, self.width - 5 * mm, y)
         y -= 5 * mm
 
-        # 5. Totals
-        c.setFont("Helvetica-Bold", 9)
-
-        c.drawString(25 * mm, y, "Subtotal:")
+        # --- 5. Totals ---
+        c.setFont("Helvetica-Bold", 8)
+        c.drawString(30 * mm, y, "Subtotal:")
         c.drawRightString(self.width - 5 * mm, y, f"{transaction_data['subtotal']:,.2f}")
         y -= 4 * mm
 
-        c.drawString(25 * mm, y, "VAT (12%):")
+        c.drawString(30 * mm, y, "VAT (12%):")
         c.drawRightString(self.width - 5 * mm, y, f"{transaction_data['vat']:,.2f}")
         y -= 6 * mm
 
-        c.setFont("Helvetica-Bold", 12)
+        c.setFont("Helvetica-Bold", 11)
         c.drawString(15 * mm, y, "TOTAL:")
         c.drawRightString(self.width - 5 * mm, y, f"{transaction_data['total']:,.2f}")
         y -= 8 * mm
 
-        # 6. Payment Details
-        c.setFont("Helvetica", 8)
+        # --- 6. Payment Details ---
+        c.setFont("Helvetica", 7)
         pay_info = transaction_data['payment']
         c.drawString(5 * mm, y, f"Paid via {pay_info['method']}")
-        y -= 4 * mm
+        y -= 3.5 * mm
         c.drawString(5 * mm, y, f"Tendered: {pay_info['tendered']:,.2f}")
-        y -= 4 * mm
+        y -= 3.5 * mm
         c.drawString(5 * mm, y, f"Change: {pay_info['change']:,.2f}")
 
-        # 7. Footer
-        y -= 15 * mm
+        # --- 7. Footer ---
+        y -= 12 * mm
+        c.setFont("Helvetica-Oblique", 8)
         c.drawCentredString(self.width / 2, y, "Thank you for shopping!")
-        c.save()
 
+        c.save()
         self.open_pdf()
 
     def open_pdf(self):
@@ -7934,20 +7972,20 @@ FILE: views\item_product_card.ui
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>145</width>
-    <height>145</height>
+    <width>168</width>
+    <height>100</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>145</width>
-    <height>145</height>
+    <width>80</width>
+    <height>100</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>145</width>
-    <height>145</height>
+    <width>168</width>
+    <height>100</height>
    </size>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -8010,20 +8048,50 @@ FILE: views\item_product_card.ui
        <number>2</number>
       </property>
       <item>
-       <widget class="QLabel" name="lbl_name">
-        <property name="styleSheet">
-         <string notr="true">font-size: 13px; font-weight: 650; color: #1E293B; border: none; background: transparent;</string>
-        </property>
-        <property name="text">
-         <string>Product Name</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="hbox_header">
+        <item>
+         <widget class="QLabel" name="lbl_name">
+          <property name="styleSheet">
+           <string notr="true">font-size: 13px; font-weight: 650; color: #1E293B; border: none; background: transparent;</string>
+          </property>
+          <property name="text">
+           <string>Product Name</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="lbl_price">
+          <property name="styleSheet">
+           <string notr="true">font-size: 13.5px; font-weight: 700; color: #0F172A; border: none; background: transparent;</string>
+          </property>
+          <property name="text">
+           <string>₱0.00</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <widget class="QLabel" name="lbl_category">
@@ -8049,37 +8117,20 @@ FILE: views\item_product_card.ui
        </spacer>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="vbox_bot">
-        <property name="spacing">
-         <number>6</number>
+       <widget class="QLabel" name="lbl_stock">
+        <property name="styleSheet">
+         <string notr="true">
+          background-color: #ECFEFF; color: #0E7490;
+          padding: 2px; border-radius: 4px; font-weight: 700; font-size: 10px; border: none;
+         </string>
         </property>
-        <item>
-         <widget class="QLabel" name="lbl_price">
-          <property name="styleSheet">
-           <string notr="true">font-size: 14.5px; font-weight: 700; color: #0F172A; border: none; background: transparent;</string>
-          </property>
-          <property name="text">
-           <string>₱0.00</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="lbl_stock">
-          <property name="styleSheet">
-           <string notr="true">
-            background-color: #ECFEFF; color: #0E7490;
-            padding: 2px; border-radius: 4px; font-weight: 700; font-size: 10px; border: none;
-           </string>
-          </property>
-          <property name="text">
-           <string>12 left</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignmentFlag::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-       </layout>
+        <property name="text">
+         <string>12 left</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -8089,7 +8140,6 @@ FILE: views\item_product_card.ui
  <resources/>
  <connections/>
 </ui>
-
 
 ==================================================
 FILE: views\item_report.ui

@@ -55,12 +55,10 @@ class InventoryController:
                 btn = getattr(self.view, btn_name)
                 btn.active_style = style_active
                 btn.default_style = style_default
-                # Reset to default initially (logic handles activation)
+                # Reset to default
                 btn.setStyleSheet(style_default)
 
     def setup_connections(self):
-        """Connect buttons and inputs."""
-
         # Main Actions
         if hasattr(self.view, 'btn_add_stock'):
             self.view.btn_add_stock.clicked.connect(self.open_add_stock_dialog)
@@ -102,7 +100,7 @@ class InventoryController:
         return getattr(user_data, 'name', 'Unknown User')
 
     def refresh_data(self, filter_type="all"):
-        #Refreshes the inventory list based on filters AND search text."""
+        #Refreshes the inventory list based on filters"""
         if not hasattr(self.view, 'layout_inventory_list'):
             return
 
@@ -138,7 +136,7 @@ class InventoryController:
 
             filtered_products.append(p)
 
-        # Sort (Newest First)
+        # Sort
         filtered_products.sort(key=lambda x: x.id, reverse=True)
 
         # === RENDER ROWS ===
@@ -155,7 +153,7 @@ class InventoryController:
                 if hasattr(row_widget, 'lbl_stock'): row_widget.lbl_stock.setText(str(product.stock))
                 if hasattr(row_widget, 'lbl_price'): row_widget.lbl_price.setText(f"₱{product.selling_price:,.2f}")
 
-                # Status Badge
+                # Status Badge(THIS IS LOGIC BECAUSE IT IS CONDITIONS)
                 if hasattr(row_widget, 'lbl_status'):
                     if product.stock == 0:
                         row_widget.lbl_status.setText("Out of Stock")
@@ -182,10 +180,6 @@ class InventoryController:
                 print(f"Error loading row: {e}")
 
     def handle_search(self, text):
-        """Called when text changes in search bar."""
-        # We assume the user wants to search across 'all' or the current view.
-        # For simplicity, we refresh current view.
-        # Ideally, you check which button is active.
         filter_mode = "all"
         if self.active_filter_button == getattr(self.view, 'btn_filter_low', None):
             filter_mode = "low"

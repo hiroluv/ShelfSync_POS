@@ -125,7 +125,7 @@ class Cart_Controller:
         vat = subtotal * 0.12
         grand_total = subtotal + vat
         self._update_totals(subtotal, vat, grand_total, total_items)
-
+#MOVE TO VIEWS
     def update_checkout_button_state(self):
         if not hasattr(self.parent, 'btn_checkout'): return
 
