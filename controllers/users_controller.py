@@ -130,7 +130,7 @@ class UsersController:
                 color: white;               /* White Text */
                 font-size: 14px;
                 background: none;
-            }
+            } 
             QPushButton {
                 background-color: #374151;  /* Button Color */
                 color: white;

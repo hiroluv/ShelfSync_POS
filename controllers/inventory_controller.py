@@ -37,12 +37,12 @@ class InventoryController:
             self.view.btn_view_logs.setText(" Audit Logs")
 
         #hardcode Filter Button
-        style_active = """
+        style_active = """ 
                 QPushButton {
                     background-color: #06B6D4; color: white; border: none; border-radius: 18px; font-weight: bold; font-size: 13px;
                 }
             """
-        style_default = """
+        style_default = """ 
                 QPushButton {
                     background-color: white; color: #64748B; border: 1px solid #E2E8F0; border-radius: 18px; font-weight: 600; font-size: 13px;
                 }
